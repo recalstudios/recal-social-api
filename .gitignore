@@ -515,3 +515,7 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # End of https://www.toptal.com/developers/gitignore/api/rider
+
+app.config
+recal-social-api/app.config
+recal-social-api/app.config
