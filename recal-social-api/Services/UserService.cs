@@ -65,31 +65,29 @@ public class UserService : IUserService
 
         throw new NotImplementedException();
     }
-    
-    
-    
-   
-    public bool CreateUser(string firstName, string lastName, string username, string email, int phoneNumber, string pass, string pfp)
+
+    public bool CreateUser(string firstName, string lastName, string username, string email, int phoneNumber, string pass,
+        string pfp)
     {
-        /*
+        throw new NotImplementedException();
+    }
+
+
+    public bool CreateUser(string username, string email, string pass, string pfp)
+    {
+        
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string credentialsString = "insert into online_store.credentials (username, password, token) values (@username, @pass, @token)";
-        const string usersString = "insert into online_store.user (email, phone_number, first_name, last_name,pfp, uusername) values (@email, @phoneNumber, @firstName, @lastName, @pfp, @username)";
-        var credentialsCommand = new MySqlCommand(credentialsString, connection);
+        const string usersString = "insert into recal_socials_database.users (username, passphrase, email, pfp) values (@username, @pass, @email, @pfp)";
+        
         var userCommand = new MySqlCommand(usersString, connection);
         
         var passBytes = Encoding.UTF8.GetBytes(pass);
         var passHash = SHA256.Create().ComputeHash(passBytes);
         
         
-        credentialsCommand.Parameters.AddWithValue("@username", username);
-        credentialsCommand.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
-        credentialsCommand.Parameters.AddWithValue("@token", RandomString(64));
+        userCommand.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
         userCommand.Parameters.AddWithValue("@username", username);
         userCommand.Parameters.AddWithValue("@email", email);
-        userCommand.Parameters.AddWithValue("@phoneNumber", phoneNumber);
-        userCommand.Parameters.AddWithValue("@firstName", firstName);
-        userCommand.Parameters.AddWithValue("@lastName", lastName);
         userCommand.Parameters.AddWithValue("@pfp", pfp);
         
         
@@ -97,7 +95,6 @@ public class UserService : IUserService
         try
         {
             connection.Open();
-            credentialsCommand.ExecuteNonQuery();
             userCommand.ExecuteNonQuery();
             return true;
         }
@@ -107,8 +104,7 @@ public class UserService : IUserService
             return false;
         }
         return true;
-        */
-        throw new NotImplementedException();
+
     }
 
     public bool DeleteUser(string username)

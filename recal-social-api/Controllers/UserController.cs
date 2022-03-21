@@ -26,7 +26,7 @@ public class UserController : Controller
     [HttpPost("create")]
     public bool CreateUser([FromBody] CreateUserRequest payload)
     {
-        return _userService.CreateUser(payload.FirstName, payload.LastName, payload.Username, payload.Email, payload.PhoneNumber, payload.Pass, payload.Pfp);
+        return _userService.CreateUser(payload.Username, payload.Email,  payload.Pass, payload.Pfp);
     }
 
     [HttpDelete("delete")]
