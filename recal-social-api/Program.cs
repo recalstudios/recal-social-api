@@ -1,6 +1,11 @@
 using System.Collections.Immutable;
+using System.Configuration;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using recal_social_api.Interfaces;
 using recal_social_api.Services;
 

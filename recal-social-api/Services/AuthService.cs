@@ -49,9 +49,9 @@ public class AuthService : IAuthService
 
     public bool UpdatePass(string user, string pass, string newPass)
     {
-        /*
+        
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "update online_store.credentials set password = @newPass where username = @username and password = @pass";
+        const string commandString = "update recal_socials_database.users set passphrase = @newPass where username = @username and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
 
         var passBytes = Encoding.UTF8.GetBytes(pass);
@@ -76,7 +76,5 @@ public class AuthService : IAuthService
             Console.WriteLine(e);
             return false;
         }
-        */
-        throw new NotImplementedException();
     }
 }
