@@ -17,10 +17,10 @@ public class UserController : Controller
         _userService = userService;
     }
 
-    [HttpGet("user")]
-    public User GetUser([FromHeader]string token)
+    [HttpPost("user")]
+    public User GetUser([FromBody] GetUserRequest payload)
     {
-        return _userService.GetUser(token);
+        return _userService.GetUser(payload.Username, payload.Password);
     }
     
     [HttpPost("create")]

@@ -29,41 +29,36 @@ public class UserService : IUserService
     
     
     
-    public User GetUser(string token)
+    public User GetUser(string username, string pass)
     {
-        /*var user = new User();
+        var user = new User();
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "select * from online_store.user, online_store.credentials where user.uusername = credentials.username and credentials.token = @token";
+        const string commandString = "select * from recal_socials_database.users where users.username = @user and users.passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
-        command.Parameters.AddWithValue("@token", token);
+        
+        var passBytes = Encoding.UTF8.GetBytes(pass);
+        var passHash = SHA256.Create().ComputeHash(passBytes);
         
         
-        
+        command.Parameters.AddWithValue("@user", username);
+        command.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
+
+
         connection.Open();
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
             // ID in the User table
-            user.Id = (int) reader["uuid"];
-            user.FirstName = (string) reader["first_name"];
-            user.LastName = (string) reader["last_name"];
+            user.Id = (int) reader["uid"];
+            user.Username = (string) reader["username"];
+            user.Password = (string) reader["passphrase"];
             user.Email = (string) reader["email"];
-            user.PhoneNumber = (int) reader["phone_number"];
-            user.pfp = (string) reader["pfp"];
-            user.Credentials = new Credentials
-            {
-                Username = (string) reader["username"],
-                Password = (string) reader["password"],
-                Token = (string) reader["token"],
-                AccessLevel = (int) reader["access_level"]
-            };
+            user.Pfp = (string) reader["pfp"];
         }
 
         connection.Close();
-        return user;*/
-
-        throw new NotImplementedException();
+        return user;
     }
 
     public bool CreateUser(string firstName, string lastName, string username, string email, int phoneNumber, string pass,

@@ -20,13 +20,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
-builder.WebHost.UseKestrel(serverOptions =>
+/*builder.WebHost.UseKestrel(serverOptions =>
 {
     serverOptions.Listen(IPAddress.Any, 5000, listenOptions =>
     {
         listenOptions.UseHttps(new X509Certificate2("certificate.pfx", "Passord01"));
     });
-});
+});*/
 
 builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", b =>
 {
@@ -35,8 +35,22 @@ builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", b =>
         .AllowAnyHeader();
 }));
 
-var app = builder.Build();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+    };
+});
 
+
+var app = builder.Build();
 
 
 app.UseHsts();
@@ -45,6 +59,7 @@ app.UseCors("CorsPolicy");
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
