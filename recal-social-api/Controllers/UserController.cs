@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
 using recal_social_api.Models;
 using recal_social_api.Models.Requests;
@@ -17,6 +18,7 @@ public class UserController : Controller
         _userService = userService;
     }
 
+    [AllowAnonymous]
     [HttpPost("user")]
     public User GetUser([FromBody] GetUserRequest payload)
     {

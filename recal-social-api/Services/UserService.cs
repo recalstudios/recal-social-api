@@ -34,7 +34,7 @@ public class UserService : IUserService
         var user = new User();
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "select * from recal_socials_database.users where users.username = @user and users.passphrase = @pass";
+        const string commandString = "select * from recal_socials_database.users where username = @user and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
         
         var passBytes = Encoding.UTF8.GetBytes(pass);
@@ -44,6 +44,8 @@ public class UserService : IUserService
         command.Parameters.AddWithValue("@user", username);
         command.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
 
+        Console.WriteLine(username);
+        Console.WriteLine(ByteArrayToString(passHash));
 
         connection.Open();
         using var reader = command.ExecuteReader();

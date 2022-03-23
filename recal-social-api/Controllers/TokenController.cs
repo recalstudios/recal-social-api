@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using recal_social_api.Interfaces;
@@ -26,6 +27,7 @@ public class TokenController : ControllerBase
         _userService = userService;
     }
 
+    [AllowAnonymous]
     [HttpPost]
     public Task<IActionResult> Post([FromBody] GetUserRequest payload)
     {
@@ -33,6 +35,7 @@ public class TokenController : ControllerBase
         {
             var user = _userService.GetUser(payload.Username, payload.Password);
 
+            Console.WriteLine(user.Username + user.Password);
             if (user.Username != null && user.Email != null)
             {
                 //create claims details based on the user information
@@ -41,8 +44,8 @@ public class TokenController : ControllerBase
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
                     new Claim("UserId", user.Id.ToString()),
-                    new Claim("DisplayName", user.Username.ToString()),
-                    new Claim("Email", user.Email.ToString())
+                    new Claim("DisplayName", user.Username),
+                    new Claim("Email", user.Email)
                 };
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));

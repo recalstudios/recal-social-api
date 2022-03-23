@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
 using recal_social_api.Models;
 using recal_social_api.Models.Requests;
@@ -18,7 +19,7 @@ public class AuthController : Controller
     {
         _authService = authService;
     }
-
+    [AllowAnonymous]
     [HttpPost]
     public string VerifyCredentials([FromBody] VerifyRequest payload)
     {
