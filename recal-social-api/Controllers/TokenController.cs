@@ -34,8 +34,7 @@ public class TokenController : ControllerBase
         if (payload.Username != null && payload.Password != null)
         {
             var user = _userService.GetUser(payload.Username, payload.Password);
-
-            Console.WriteLine(user.Username + user.Password);
+            
             if (user.Username != null && user.Email != null)
             {
                 //create claims details based on the user information

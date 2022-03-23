@@ -44,8 +44,6 @@ public class UserService : IUserService
         command.Parameters.AddWithValue("@user", username);
         command.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
 
-        Console.WriteLine(username);
-        Console.WriteLine(ByteArrayToString(passHash));
 
         connection.Open();
         using var reader = command.ExecuteReader();
