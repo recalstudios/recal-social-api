@@ -21,15 +21,16 @@ public class AuthController : Controller
     }
     [AllowAnonymous]
     [HttpPost]
-    public string VerifyCredentials([FromBody] VerifyRequest payload)
+    public User VerifyCredentials([FromBody] VerifyRequest payload)
     {
-        return _authService.VerifyCredentials(payload.User, payload.Pass);
+        return _authService.VerifyCredentials(payload.Username, payload.Pass);
     }
 
     [HttpPost("update")]
     public bool UpdatePass([FromBody] UpdateCredentialsRequest payload)
     {
-        return _authService.UpdatePass(payload.Token, payload.Pass, payload.NewPass);
+        //return _authService.UpdatePass(payload.Token, payload.Pass, payload.NewPass);
+        throw new NotImplementedException();
     }
     
 }

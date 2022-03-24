@@ -17,14 +17,14 @@ namespace recal_social_api.Controllers;
 [ApiController]
 public class TokenController : ControllerBase
 {
-    private readonly IUserService _userService;
+    private readonly IAuthService _authService;
     
     private readonly IConfiguration _configuration;
 
-    public TokenController(IConfiguration config, IUserService userService)
+    public TokenController(IConfiguration config, IAuthService authService)
     {
         _configuration = config;
-        _userService = userService;
+        _authService = authService;
     }
 
     [AllowAnonymous]
@@ -33,9 +33,9 @@ public class TokenController : ControllerBase
     {
         if (payload.Username != null && payload.Password != null)
         {
-            var user = _userService.GetUser(payload.Username, payload.Password);
+            var user = _authService.VerifyCredentials(payload.Username, payload.Password);
             
-            if (user.Username != null && user.Email != null)
+            if (user.Username != null && user.Email != null && user.Password != null)
             {
                 //create claims details based on the user information
                 var claims = new[] {
@@ -44,6 +44,7 @@ public class TokenController : ControllerBase
                     new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
                     new Claim("UserId", user.Id.ToString()),
                     new Claim("DisplayName", user.Username),
+                    new Claim("HashedPass", user.Password),
                     new Claim("Email", user.Email)
                 };
 

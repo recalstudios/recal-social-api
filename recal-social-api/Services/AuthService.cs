@@ -18,39 +18,42 @@ public class AuthService : IAuthService
     }
     
     
-    public string VerifyCredentials(string user, string pass)
+    public User VerifyCredentials(string username, string pass)
     {
-        /*
-        var token = "";
+        
+        var userdata = new User();
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "select token from online_store.credentials where username = @user and password = @pass";
+        const string commandString = "select * from recal_socials_database.users where username = @user and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
         
         var passBytes = Encoding.UTF8.GetBytes(pass);
         var passHash = SHA256.Create().ComputeHash(passBytes);
         
         
-        command.Parameters.AddWithValue("@user", user);
+        command.Parameters.AddWithValue("@user", username);
         command.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
 
+
         connection.Open();
-        
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-           token = (string) reader[0];
+            // ID in the User table
+            userdata.Id = (int) reader["uid"];
+            userdata.Username = (string) reader["username"];
+            userdata.Password = (string) reader["passphrase"];
+            userdata.Email = (string) reader["email"];
+            userdata.Pfp = (string) reader["pfp"];
         }
-        
-        return token;
-        */
-        throw new NotImplementedException();
+
+        connection.Close();
+        return userdata;
     }
 
     public bool UpdatePass(string user, string pass, string newPass)
     {
-        
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        /*using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "update recal_socials_database.users set passphrase = @newPass where username = @username and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
 
@@ -75,6 +78,7 @@ public class AuthService : IAuthService
         {
             Console.WriteLine(e);
             return false;
-        }
+        }*/
+        throw new NotImplementedException();
     }
 }

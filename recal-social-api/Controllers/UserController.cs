@@ -18,7 +18,7 @@ public class UserController : Controller
         _userService = userService;
     }
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("user")]
     public User GetUser([FromBody] GetUserRequest payload)
     {
