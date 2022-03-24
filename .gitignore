@@ -519,4 +519,4 @@ fabric.properties
 app.config
 recal-social-api/app.config
 recal-social-api/app.config
-.idea/*
+*/.idea/*
