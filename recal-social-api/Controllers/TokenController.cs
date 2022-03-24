@@ -13,7 +13,7 @@ using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegiste
 namespace recal_social_api.Controllers;
 
 
-[Route("api/token")]
+[Route("auth/token/new")]
 [ApiController]
 public class TokenController : ControllerBase
 {
@@ -29,13 +29,13 @@ public class TokenController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost]
-    public Task<IActionResult> Post([FromBody] GetUserRequest payload)
+    public Task<IActionResult> Post([FromBody] VerifyUserRequest payload)
     {
         if (payload.Username != null && payload.Password != null)
         {
             var user = _authService.VerifyCredentials(payload.Username, payload.Password);
             
-            if (user.Username != null && user.Email != null && user.Password != null)
+            if (user.Username != null && user.Email != null)
             {
                 //create claims details based on the user information
                 var claims = new[] {
@@ -43,8 +43,7 @@ public class TokenController : ControllerBase
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
                     new Claim("UserId", user.Id.ToString()),
-                    new Claim("DisplayName", user.Username),
-                    new Claim("HashedPass", user.Password),
+                    new Claim("Username", user.Username),
                     new Claim("Email", user.Email)
                 };
 

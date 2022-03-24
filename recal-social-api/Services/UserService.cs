@@ -3,6 +3,7 @@ using System.Text;
 using MySqlConnector;
 using recal_social_api.Interfaces;
 using recal_social_api.Models;
+using recal_social_api.Models.Responses;
 namespace recal_social_api.Services;
 using ConfigurationManager = System.Configuration.ConfigurationManager;
 
@@ -23,26 +24,30 @@ public class UserService : IUserService
         for (i = 0; i < arrInput.Length; i++) sOutput.Append(arrInput[i].ToString("X2"));
         return sOutput.ToString();
     }
-    
-    
-    
-    
-    
-    
-    public User GetUser(string username, string pass)
+
+    private static string Hash(string pass)
     {
-        var user = new User();
-        
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "select * from recal_socials_database.users where username = @user and passphrase = @pass";
-        var command = new MySqlCommand(commandString, connection);
-        
         var passBytes = Encoding.UTF8.GetBytes(pass);
         var passHash = SHA256.Create().ComputeHash(passBytes);
+        return ByteArrayToString(passHash);
+    }
+    
+    
+    
+    
+    
+    
+    public GetUserResponse GetUser(string username)
+    {
+        var user = new GetUserResponse();
         
-        
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        const string commandString = "select * from recal_socials_database.users where username = @user";
+        var command = new MySqlCommand(commandString, connection);
+
+
+
         command.Parameters.AddWithValue("@user", username);
-        command.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
 
 
         connection.Open();
@@ -61,11 +66,7 @@ public class UserService : IUserService
         return user;
     }
 
-    public bool CreateUser(string firstName, string lastName, string username, string email, int phoneNumber, string pass,
-        string pfp)
-    {
-        throw new NotImplementedException();
-    }
+
 
 
     public bool CreateUser(string username, string email, string pass, string pfp)
@@ -76,11 +77,10 @@ public class UserService : IUserService
         
         var userCommand = new MySqlCommand(usersString, connection);
         
-        var passBytes = Encoding.UTF8.GetBytes(pass);
-        var passHash = SHA256.Create().ComputeHash(passBytes);
+
         
         
-        userCommand.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
+        userCommand.Parameters.AddWithValue("@pass", Hash(pass));
         userCommand.Parameters.AddWithValue("@username", username);
         userCommand.Parameters.AddWithValue("@email", email);
         userCommand.Parameters.AddWithValue("@pfp", pfp);
@@ -98,17 +98,20 @@ public class UserService : IUserService
             Console.WriteLine(e);
             return false;
         }
-        return true;
 
     }
 
     public bool DeleteUser(string username)
     {
-        /*
+        // Changes the user to random information. This is so that user chats still make sense, but user is anonymised
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "delete from online_store.user where uusername = @username; delete from online_store.credentials where username = @username";
+        const string commandString = "update recal_socials_database.users set username = @username, passphrase = @pass, email = @email, pfp = 'https://via.placeholder.com/100x100', access_level = '0' where username = @oldUsername";
         var command = new MySqlCommand(commandString, connection);
-        command.Parameters.AddWithValue("@username", username);
+        command.Parameters.AddWithValue("@oldUsername", username);
+        command.Parameters.AddWithValue("@username", "Deleted user #" + RandomString(16));
+        command.Parameters.AddWithValue("@pass", Hash(RandomString(32)));
+        command.Parameters.AddWithValue("@email", RandomString(32));
+        
         
 
 
@@ -124,8 +127,7 @@ public class UserService : IUserService
             Console.WriteLine(e);
             return false;
         }
-        */
-        throw new NotImplementedException();
+
     }
 
     public bool UpdateUser(string payloadToken, string? payloadFirstName, string? payloadLastName, string? payloadEmail, int? payloadPhoneNumber, string? payloadPfp)

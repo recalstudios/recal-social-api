@@ -22,7 +22,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 
 /*builder.WebHost.UseKestrel(serverOptions =>
 {
-    serverOptions.Listen(IPAddress.Any, 5000, listenOptions =>
+    serverOptions.Listen(IPAddress.Any, 5002, listenOptions =>
     {
         listenOptions.UseHttps(new X509Certificate2("certificate.pfx", "Passord01"));
     });
@@ -43,6 +43,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     {
         ValidateIssuer = true,
         ValidateAudience = true,
+        ValidateLifetime = true,
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))

@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
 using recal_social_api.Models;
 using recal_social_api.Models.Requests;
+using recal_social_api.Models.Responses;
 
 namespace recal_social_api.Controllers;
 
@@ -20,9 +23,34 @@ public class UserController : Controller
 
     [Authorize]
     [HttpPost("user")]
-    public User GetUser([FromBody] GetUserRequest payload)
+    public GetUserResponse GetUser()
     {
-        return _userService.GetUser(payload.Username, payload.Password);
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(stream);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Sets the variable username to the username from the token
+        var username = tokenS!.Claims.First(claim => claim.Type == "Username").Value;
+        var retUser = _userService.GetUser(username);
+
+        if (string.IsNullOrEmpty(retUser.Username))
+        {
+            return new GetUserResponse()
+            {
+                Status = "User not availible or found"
+            };
+        }
+
+        return retUser;
+
     }
     
     [HttpPost("create")]
@@ -31,10 +59,25 @@ public class UserController : Controller
         return _userService.CreateUser(payload.Username, payload.Email,  payload.Pass, payload.Pfp);
     }
 
+    [Authorize]
     [HttpDelete("delete")]
-    public bool DeleteUser([FromBody] DeleteUserRequest payload)
+    public bool DeleteUser()
     {
-        return _userService.DeleteUser(payload.Username);
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(stream);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Sets the variable username to the username from the token
+        var username = tokenS.Claims.First(claim => claim.Type == "Username").Value;
+        return _userService.DeleteUser(username);
     }
 
     [HttpPost("update")]

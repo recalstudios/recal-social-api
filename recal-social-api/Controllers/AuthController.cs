@@ -19,12 +19,6 @@ public class AuthController : Controller
     {
         _authService = authService;
     }
-    [AllowAnonymous]
-    [HttpPost]
-    public User VerifyCredentials([FromBody] VerifyRequest payload)
-    {
-        return _authService.VerifyCredentials(payload.Username, payload.Pass);
-    }
 
     [HttpPost("update")]
     public bool UpdatePass([FromBody] UpdateCredentialsRequest payload)
