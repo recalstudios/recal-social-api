@@ -1,5 +1,10 @@
-﻿using System.Security.Cryptography;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Any;
 using MySqlConnector;
 using recal_social_api.Interfaces;
 using recal_social_api.Models;
@@ -9,6 +14,14 @@ using ConfigurationManager = System.Configuration.ConfigurationManager;
 
 public class AuthService : IAuthService
 {
+    
+    private readonly IConfiguration _configuration;
+
+    public AuthService(IConfiguration config)
+    {
+        _configuration = config;
+    }
+    
     private static string ByteArrayToString(byte[] arrInput)
     {
         int i;
@@ -49,6 +62,46 @@ public class AuthService : IAuthService
 
         connection.Close();
         return userdata;
+    }
+
+    public String GetToken(string username, string pass)
+    {
+        if (username != null && pass != null)
+        {
+            var user = VerifyCredentials(username, pass);
+            
+            if (user.Username != null && user.Email != null)
+            {
+                //create claims details based on the user information
+                var claims = new[] {
+                    new Claim(JwtRegisteredClaimNames.Sub, _configuration["Jwt:Subject"]),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
+                    new Claim("UserId", user.Id.ToString()),
+                    new Claim("Username", user.Username),
+                    new Claim("Email", user.Email)
+                };
+
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+                var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                var token = new JwtSecurityToken(
+                    _configuration["Jwt:Issuer"],
+                    _configuration["Jwt:Audience"],
+                    claims,
+                    expires: DateTime.UtcNow.AddMinutes(10),
+                    signingCredentials: signIn);
+
+                return new JwtSecurityTokenHandler().WriteToken(token).ToString();
+            }
+            else
+            {
+                return "Invalid credentials";
+            }
+        }
+        else
+        {
+            return "Bad request";
+        }
     }
 
     public bool UpdatePass(string user, string pass, string newPass)
