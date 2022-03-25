@@ -14,7 +14,7 @@ using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegiste
 namespace recal_social_api.Controllers;
 
 
-[Route("auth/token/new")]
+[Route("auth/token")]
 [ApiController]
 public class TokenController : ControllerBase
 {
@@ -27,10 +27,10 @@ public class TokenController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpPost]
+    [HttpPost("new")]
     public Task<IActionResult> Post([FromBody] VerifyUserRequest payload)
     {
-        string result = _authService.GetToken(payload.Username, payload.Password);
+        var result = _authService.GetToken(payload.Username, payload.Password);
         if(result == "BadRequest")
         {
             return Task.FromResult<IActionResult>(BadRequest("Bad request"));
@@ -43,6 +43,13 @@ public class TokenController : ControllerBase
 
         return Task.FromResult<IActionResult>(Ok(result));
 
+    }
+
+    [AllowAnonymous]
+    [HttpPost]
+    public Task<IActionResult> RefreshToken([FromHeader] string yourmom)
+    {
+        throw new NotImplementedException();
     }
     
 }

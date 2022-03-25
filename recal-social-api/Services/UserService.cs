@@ -42,7 +42,7 @@ public class UserService : IUserService
         var user = new GetUserResponse();
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "select * from recal_socials_database.users where username = @user";
+        const string commandString = "select * from recal_social_database.users where username = @user";
         var command = new MySqlCommand(commandString, connection);
 
 
@@ -73,7 +73,7 @@ public class UserService : IUserService
     {
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string usersString = "insert into recal_socials_database.users (username, passphrase, email, pfp) values (@username, @pass, @email, @pfp)";
+        const string usersString = "insert into recal_social_database.users (username, passphrase, email, pfp) values (@username, @pass, @email, @pfp)";
         
         var userCommand = new MySqlCommand(usersString, connection);
         
@@ -105,7 +105,7 @@ public class UserService : IUserService
     {
         // Changes the user to random information. This is so that user chats still make sense, but user is anonymised
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "update recal_socials_database.users set username = @username, passphrase = @pass, email = @email, pfp = 'https://via.placeholder.com/100x100', access_level = '0' where username = @oldUsername";
+        const string commandString = "update recal_social_database.users set username = @username, passphrase = @pass, email = @email, pfp = 'https://via.placeholder.com/100x100', access_level = '0' where username = @oldUsername";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@oldUsername", username);
         command.Parameters.AddWithValue("@username", "Deleted user #" + RandomString(16));

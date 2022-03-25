@@ -30,6 +30,22 @@ public class AuthService : IAuthService
         return sOutput.ToString();
     }
     
+    private static string Hash(string pass)
+    {
+        var passBytes = Encoding.UTF8.GetBytes(pass);
+        var passHash = SHA256.Create().ComputeHash(passBytes);
+        return ByteArrayToString(passHash);
+    }
+    
+    private static string GenerateRefreshToken(int userId)
+    {
+        var RefToken = new RefreshToken();
+        
+        var randomNumber = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
     
     public User VerifyCredentials(string username, string pass)
     {
@@ -37,15 +53,11 @@ public class AuthService : IAuthService
         var userdata = new User();
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "select * from recal_socials_database.users where username = @user and passphrase = @pass";
+        const string commandString = "select * from recal_social_database.users where username = @user and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
-        
-        var passBytes = Encoding.UTF8.GetBytes(pass);
-        var passHash = SHA256.Create().ComputeHash(passBytes);
-        
-        
+
         command.Parameters.AddWithValue("@user", username);
-        command.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
+        command.Parameters.AddWithValue("@pass", Hash(pass));
 
 
         connection.Open();
@@ -107,7 +119,7 @@ public class AuthService : IAuthService
     public bool UpdatePass(string user, string pass, string newPass)
     {
         /*using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "update recal_socials_database.users set passphrase = @newPass where username = @username and passphrase = @pass";
+        const string commandString = "update recal_social_database.users set passphrase = @newPass where username = @username and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
 
         var passBytes = Encoding.UTF8.GetBytes(pass);
