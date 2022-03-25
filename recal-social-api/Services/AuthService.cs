@@ -14,14 +14,14 @@ using ConfigurationManager = System.Configuration.ConfigurationManager;
 
 public class AuthService : IAuthService
 {
-    
+
     private readonly IConfiguration _configuration;
 
     public AuthService(IConfiguration config)
     {
         _configuration = config;
     }
-    
+
     private static string ByteArrayToString(byte[] arrInput)
     {
         int i;
@@ -29,23 +29,84 @@ public class AuthService : IAuthService
         for (i = 0; i < arrInput.Length; i++) sOutput.Append(arrInput[i].ToString("X2"));
         return sOutput.ToString();
     }
-    
+
     private static string Hash(string pass)
     {
         var passBytes = Encoding.UTF8.GetBytes(pass);
         var passHash = SHA256.Create().ComputeHash(passBytes);
         return ByteArrayToString(passHash);
     }
-    
-    private static string GenerateRefreshToken(int userId)
+
+    public string GenerateRefreshToken(int userId)
     {
-        var RefToken = new RefreshToken();
+
+        //Initialise the object that is going to be made and sent
+            var RefToken = new RefreshToken();
+
+        //Create the randomness of the token
+            var randomNumber = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
         
-        var randomNumber = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
+        // Information needed for a fresh RefreshToken
+            RefToken.Token = Convert.ToBase64String(randomNumber);
+            RefToken.Created = DateTime.UtcNow;
+            RefToken.ExpiresAt = DateTime.Now.AddHours(24);
+            RefToken.UserID = userId;
+
+
+        // Insert into the DB
+            using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+            const string commandString = "insert into recal_social_database.refreshtoken (token, created, expiresAt, userId) value (@token, @created, @expiresat, @userid)";
+            var command = new MySqlCommand(commandString, connection);
+            
+            
+            command.Parameters.AddWithValue("@token", RefToken.Token);
+            command.Parameters.AddWithValue("@created", RefToken.Created);
+            command.Parameters.AddWithValue("@expiresat", RefToken.ExpiresAt);
+            command.Parameters.AddWithValue("@userid", RefToken.UserID);
+
+
+            try
+            {
+                connection.Open();
+                command.ExecuteNonQuery();
+                connection.Close();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            
+        //create claims
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, "JWTRefreshToken"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, RefToken.Created.ToString()),
+                new Claim("UserId", userId.ToString()),
+                new Claim("Token", RefToken.Token),
+            };
+
+        // Create the token
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var token = new JwtSecurityToken(
+                _configuration["Jwt:Issuer"],
+                _configuration["Jwt:Audience"],
+                claims,
+                expires: RefToken.ExpiresAt,
+                signingCredentials: signIn);
+
+        //Return the token
+        string JwtTokenRefresh = new JwtSecurityTokenHandler().WriteToken(token).ToString();
+
+        return JwtTokenRefresh;
     }
+
+    
+
     
     public User VerifyCredentials(string username, string pass)
     {
@@ -76,7 +137,7 @@ public class AuthService : IAuthService
         return userdata;
     }
 
-    public String GetToken(string username, string pass)
+    public string GetToken(string username, string pass)
     {
         if (username != null && pass != null)
         {
@@ -91,7 +152,6 @@ public class AuthService : IAuthService
                     new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
                     new Claim("UserId", user.Id.ToString()),
                     new Claim("Username", user.Username),
-                    new Claim("Email", user.Email)
                 };
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
