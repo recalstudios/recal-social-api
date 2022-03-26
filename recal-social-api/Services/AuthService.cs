@@ -51,7 +51,7 @@ public class AuthService : IAuthService
         // Information needed for a fresh RefreshToken
             RefToken.Token = Convert.ToBase64String(randomNumber);
             RefToken.Created = DateTime.UtcNow;
-            RefToken.ExpiresAt = DateTime.Now.AddHours(24);
+            RefToken.ExpiresAt = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays);
             RefToken.UserID = userId;
 
 

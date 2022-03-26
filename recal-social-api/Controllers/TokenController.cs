@@ -1,14 +1,9 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Any;
 using recal_social_api.Interfaces;
 using recal_social_api.Models.Requests;
 using recal_social_api.Models.Responses;
-using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
+
 
 namespace recal_social_api.Controllers;
 
@@ -46,7 +41,22 @@ public class TokenController : ControllerBase
         // Inserts the refreshtoken into the response
             var responsetoken = _authService.GenerateRefreshToken(user.Id) ?? throw new InvalidOperationException();
             response.RefreshToken = responsetoken;
-            return Task.FromResult<IActionResult>(Ok(response));
+            
+        
+
+        var cookieOptions = new CookieOptions()
+        {
+            Expires = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays),
+            HttpOnly = true,
+            Secure = true
+        };
+
+        HttpContext.Response.Cookies.Append("refreshToken", response.RefreshToken, cookieOptions);
+
+
+        return Task.FromResult<IActionResult>(Ok(response.AuthToken));
+
+
 
     }
 
