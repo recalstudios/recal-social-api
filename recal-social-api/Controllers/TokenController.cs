@@ -27,7 +27,7 @@ public class TokenController : ControllerBase
     {
         var response = new GetJwtTokenResponse();
         
-        var result = _authService.GetToken(payload.Username, payload.Password);
+        var result = _authService.GetAuthToken(payload.Username, payload.Password);
         // Returns error if anything goes wrong
             if(result == "BadRequest")
             { return Task.FromResult<IActionResult>(BadRequest("Bad request")); }

@@ -37,11 +37,12 @@ public class AuthService : IAuthService
         return ByteArrayToString(passHash);
     }
 
+    //  Generate fresh refreshtoken that gets sent to database
     public string GenerateRefreshToken(int userId)
     {
 
         //Initialise the object that is going to be made and sent
-            var RefToken = new RefreshToken();
+            var refToken = new RefreshToken();
 
         //Create the randomness of the token
             var randomNumber = new byte[64];
@@ -49,22 +50,20 @@ public class AuthService : IAuthService
             rng.GetBytes(randomNumber);
         
         // Information needed for a fresh RefreshToken
-            RefToken.Token = Convert.ToBase64String(randomNumber);
-            RefToken.Created = DateTime.UtcNow;
-            RefToken.ExpiresAt = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays);
-            RefToken.UserID = userId;
+            refToken.Token = Convert.ToBase64String(randomNumber);
+            refToken.Created = DateTime.UtcNow;
+            refToken.ExpiresAt = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays);
+            refToken.UserId = userId;
 
 
         // Insert into the DB
             using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
             const string commandString = "insert into recal_social_database.refreshtoken (token, created, expiresAt, userId) value (@token, @created, @expiresat, @userid)";
             var command = new MySqlCommand(commandString, connection);
-            
-            
-            command.Parameters.AddWithValue("@token", RefToken.Token);
-            command.Parameters.AddWithValue("@created", RefToken.Created);
-            command.Parameters.AddWithValue("@expiresat", RefToken.ExpiresAt);
-            command.Parameters.AddWithValue("@userid", RefToken.UserID);
+            command.Parameters.AddWithValue("@token", refToken.Token);
+            command.Parameters.AddWithValue("@created", refToken.Created);
+            command.Parameters.AddWithValue("@expiresat", refToken.ExpiresAt);
+            command.Parameters.AddWithValue("@userid", refToken.UserId);
 
 
             try
@@ -84,9 +83,9 @@ public class AuthService : IAuthService
             {
                 new Claim(JwtRegisteredClaimNames.Sub, "JWTRefreshToken"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, RefToken.Created.ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, refToken.Created.ToString()),
                 new Claim("UserId", userId.ToString()),
-                new Claim("Token", RefToken.Token),
+                new Claim("Token", refToken.Token),
             };
 
         // Create the token
@@ -96,23 +95,57 @@ public class AuthService : IAuthService
                 _configuration["Jwt:Issuer"],
                 _configuration["Jwt:Audience"],
                 claims,
-                expires: RefToken.ExpiresAt,
+                expires: refToken.ExpiresAt,
                 signingCredentials: signIn);
 
         //Return the token
-        string JwtTokenRefresh = new JwtSecurityTokenHandler().WriteToken(token).ToString();
+        // ReSharper disable once InconsistentNaming
+        var JwtTokenRefresh = new JwtSecurityTokenHandler().WriteToken(token).ToString();
 
         return JwtTokenRefresh;
     }
 
-    
+    //  Get refresh token from DB
+    public RefreshToken GetRefreshToken(string token)
+    {
+        var refreshToken = new RefreshToken();
+        
+        // Get from the DB
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        const string commandString = "select * from recal_social_database.refreshtoken where token = @token";
+        var command = new MySqlCommand(commandString, connection);
+        command.Parameters.AddWithValue("@token", token);
 
-    
+        // Reads and puts into var
+        connection.Open();
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            // ID in the User table
+            refreshToken.RefreshTokenId = (int) reader["refreshTokenId"];
+            refreshToken.Token = (string) reader["token"];
+            refreshToken.Created = (DateTime) reader["created"];
+            refreshToken.RevokationDate = (DateTime) reader["revokationDate"];
+            refreshToken.ManuallyRevoked = (bool) reader["manuallyRevoked"];
+            refreshToken.ExpiresAt = (DateTime) reader["expiresAt"];
+            refreshToken.ReplacesId = (int) reader["replacesId"];
+            refreshToken.ReplacedById = (int) reader["replacedById"];
+            refreshToken.UserId = (int) reader["userId"];
+        }
+
+        connection.Close();
+        
+        // Return
+        return refreshToken;
+    }
+
+    // Verify if user exists in DB with username and pass
     public User VerifyCredentials(string username, string pass)
     {
         
         var userdata = new User();
         
+        // Connect to DB and get user
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "select * from recal_social_database.users where username = @user and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
@@ -137,13 +170,16 @@ public class AuthService : IAuthService
         return userdata;
     }
 
-    public string GetToken(string username, string pass)
+    public string GetAuthToken(string username, string pass)
     {
-        if (username != null && pass != null)
+        //  If username isn't empty, starts creating JWT token
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+        if (username != null)
         {
             var user = VerifyCredentials(username, pass);
             
-            if (user.Username != null && user.Email != null)
+            //  If returning Username successfully, create JWT. Else fails
+            if (user.Username != null)
             {
                 //create claims details based on the user information
                 var claims = new[] {
@@ -154,6 +190,7 @@ public class AuthService : IAuthService
                     new Claim("Username", user.Username),
                 };
 
+                // Creates the JWT token and includes the claims
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
                 var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
                 var token = new JwtSecurityToken(

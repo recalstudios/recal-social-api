@@ -9,6 +9,6 @@ public interface IAuthService
 {
     public string GenerateRefreshToken(int userId);
     public User VerifyCredentials(string username, string pass);
-    public string GetToken(string username, string pass);
+    public string GetAuthToken(string username, string pass);
     public bool UpdatePass(string user, string pass, string newPass);
 }
