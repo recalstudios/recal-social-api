@@ -157,19 +157,6 @@ public class AuthService : IAuthService
         command.Parameters.AddWithValue("@oldTokenId", oldTokenId);
         command.Parameters.AddWithValue("@revdate", DateTime.UtcNow);
         
-        try
-        {
-            connection.Open();
-            command.ExecuteNonQuery();
-            connection.Close();
-        }
-        
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            errors++;
-        }
-        
         // Update old token
         const string commandString2 = "update recal_social_database.refreshtoken set replacesId = @oldTokenId where refreshTokenId = @tokenId";
         var command2 = new MySqlCommand(commandString2, connection);
