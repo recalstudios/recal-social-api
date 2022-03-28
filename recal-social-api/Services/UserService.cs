@@ -31,12 +31,7 @@ public class UserService : IUserService
         var passHash = SHA256.Create().ComputeHash(passBytes);
         return ByteArrayToString(passHash);
     }
-    
-    
-    
-    
-    
-    
+
     public GetUserResponse GetUser(string username)
     {
         var user = new GetUserResponse();
@@ -65,10 +60,36 @@ public class UserService : IUserService
         connection.Close();
         return user;
     }
+    
+    public GetUserResponse GetUserById(int userId)
+    {
+        var user = new GetUserResponse();
+        
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        const string commandString = "select * from recal_social_database.users where uid = @userId";
+        var command = new MySqlCommand(commandString, connection);
 
 
 
+        command.Parameters.AddWithValue("@userId", userId);
 
+
+        connection.Open();
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            // ID in the User table
+            user.Id = (int) reader["uid"];
+            user.Username = (string) reader["username"];
+            user.Password = (string) reader["passphrase"];
+            user.Email = (string) reader["email"];
+            user.Pfp = (string) reader["pfp"];
+        }
+
+        connection.Close();
+        return user;
+    }
+    
     public bool CreateUser(string username, string email, string pass, string pfp)
     {
         
@@ -91,6 +112,7 @@ public class UserService : IUserService
         {
             connection.Open();
             userCommand.ExecuteNonQuery();
+            connection.Close();
             return true;
         }
         catch (Exception e)
@@ -120,6 +142,7 @@ public class UserService : IUserService
         {
             connection.Open();
             command.ExecuteNonQuery();
+            connection.Close();
             return true;
         }
         catch (Exception e)
@@ -157,6 +180,7 @@ public class UserService : IUserService
         {
             connection.Open();
             command.ExecuteNonQuery();
+            connection.Close();
             return true;
         }
         catch (Exception e)

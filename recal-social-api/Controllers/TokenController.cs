@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
 using recal_social_api.Models.Requests;
@@ -27,7 +28,7 @@ public class TokenController : ControllerBase
     {
         var response = new GetJwtTokenResponse();
         
-        var result = _authService.GetAuthToken(payload.Username, payload.Password);
+        var result = _authService.GetNewAuthToken(payload.Username, payload.Password);
         // Returns error if anything goes wrong
             if(result == "BadRequest")
             { return Task.FromResult<IActionResult>(BadRequest("Bad request")); }
@@ -56,8 +57,45 @@ public class TokenController : ControllerBase
 
         return Task.FromResult<IActionResult>(Ok(response.AuthToken));
 
+    }
 
+    [AllowAnonymous]
+    [HttpPost("renew")]
+    public Task<IActionResult> ChainToken()
+    {
+        Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
 
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(refreshToken);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Sets the variable username to the username from the token
+        var oldToken = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
+        var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
+
+        var user = _userService.GetUserById(Int32.Parse(userId));
+        
+        var newRefreshToken = _authService.NewRefreshToken(oldToken);
+
+        if (user.Username != null)
+        {
+            var newAuthToken = _authService.GetAuthToken(user.Username);
+        
+            var cookieOptions = new CookieOptions()
+            {
+                Expires = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays),
+                HttpOnly = true,
+                Secure = true
+            };
+
+            HttpContext.Response.Cookies.Append("refreshToken", newRefreshToken, cookieOptions);
+        
+        
+            return Task.FromResult<IActionResult>(Ok(newAuthToken));
+        }
+
+        throw new Exception("Something went wrong when fetching user");
     }
 
     [AllowAnonymous]
