@@ -138,6 +138,58 @@ public class AuthService : IAuthService
         // Return
         return refreshToken;
     }
+    
+    // Update the refreshtoken in the DB
+    public bool UpdateRefreshToken(int tokenId, int oldTokenId)
+    {
+        var errors = 0;
+        
+        // Update old token
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        const string commandString = "update recal_social_database.refreshtoken set replacedById = @tokenId and revokationDate = @revdate where refreshTokenId = @oldTokenId";
+        var command = new MySqlCommand(commandString, connection);
+        command.Parameters.AddWithValue("@tokenId", tokenId);
+        command.Parameters.AddWithValue("@oldTokenId", oldTokenId);
+        command.Parameters.AddWithValue("@revdate", DateTime.UtcNow);
+        
+        try
+        {
+            connection.Open();
+            command.ExecuteNonQuery();
+            connection.Close();
+        }
+        
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            errors++;
+        }
+        
+        // Update old token
+        const string commandString2 = "update recal_social_database.refreshtoken set replacesId = @oldTokenId where refreshTokenId = @tokenId";
+        var command2 = new MySqlCommand(commandString2, connection);
+        command.Parameters.AddWithValue("@tokenId", tokenId);
+        command.Parameters.AddWithValue("@oldTokenId", oldTokenId);
+        
+        try
+        {
+            connection.Open();
+            command2.ExecuteNonQuery();
+            connection.Close();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            errors++;
+        }
+
+        if(errors == 0)
+        {
+            return true;
+        }
+
+        return false;
+    }
 
     // Verify if user exists in DB with username and pass
     public User VerifyCredentials(string username, string pass)
