@@ -74,6 +74,13 @@ public class TokenController : ControllerBase
         var oldToken = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
         var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
 
+        var oldRefreshToken = _authService.GetRefreshToken(oldToken);
+        
+        // If its expired or revoked, doesnt work
+        if (DateTime.Parse(oldRefreshToken.ExpiresAt) <= DateTime.UtcNow && oldRefreshToken.ManuallyRevoked != 1){
+            return Task.FromResult<IActionResult>(BadRequest("Token is expired or invalid")); 
+        }
+        
         var user = _userService.GetUserById(Int32.Parse(userId));
         
         var newRefreshToken = _authService.NewRefreshToken(oldToken);
@@ -96,7 +103,10 @@ public class TokenController : ControllerBase
         }
 
         throw new Exception("Something went wrong when fetching user");
+
     }
+        
+        
 
     [AllowAnonymous]
     [HttpPost]

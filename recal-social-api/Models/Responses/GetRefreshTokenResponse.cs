@@ -6,7 +6,7 @@ public class GetRefreshTokenResponse
     public string Token { get; set; } = null!;
     public DateTime Created { get; set; }
     public string? RevokationDate { get; set; }
-    public string? ManuallyRevoked { get; set; }
+    public int? ManuallyRevoked { get; set; }
     public string? ExpiresAt { get; set; }
     public int ReplacedById { get; set; }
     public int UserId { get; set; }

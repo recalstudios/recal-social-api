@@ -32,6 +32,7 @@ public class UserService : IUserService
         return ByteArrayToString(passHash);
     }
 
+    // Gets user based on username
     public GetUserResponse GetUser(string username)
     {
         var user = new GetUserResponse();
@@ -61,6 +62,7 @@ public class UserService : IUserService
         return user;
     }
     
+    // Gets user based on userId
     public GetUserResponse GetUserById(int userId)
     {
         var user = new GetUserResponse();

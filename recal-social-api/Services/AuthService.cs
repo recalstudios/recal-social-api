@@ -114,8 +114,7 @@ public class AuthService : IAuthService
     public GetRefreshTokenResponse GetRefreshToken(string token)
     {
         var refreshToken = new GetRefreshTokenResponse();
-        var replaceId = new object();
-        
+
         // Get from the DB
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "select * from recal_social_database.refreshtoken where token = @token";
@@ -132,7 +131,7 @@ public class AuthService : IAuthService
             refreshToken.Token = (string) reader["token"];
             refreshToken.Created = (DateTime) reader["created"];
             refreshToken.RevokationDate = reader["revokationDate"].ToString();
-            refreshToken.ManuallyRevoked = reader["manuallyRevoked"].ToString();
+            refreshToken.ManuallyRevoked = (int) (reader["manuallyRevoked"].ToString()!.Length == 0 ? 0 : reader["manuallyRevoked"]);
             refreshToken.ExpiresAt = reader["expiresAt"].ToString();
             refreshToken.UserId = (int) reader["userId"];
         }
@@ -151,13 +150,13 @@ public class AuthService : IAuthService
         
         // Update old token
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "update recal_social_database.refreshtoken set replacedById = @tokenId and revokationDate = @revdate where refreshTokenId = @oldTokenId";
+        const string commandString = "update recal_social_database.refreshtoken set replacedById = @tokenId, revokationDate = @revdate, manuallyRevoked = 1 where refreshTokenId = @oldTokenId";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@tokenId", tokenId);
         command.Parameters.AddWithValue("@oldTokenId", oldTokenId);
         command.Parameters.AddWithValue("@revdate", DateTime.UtcNow);
         
-        // Update old token
+        // Update new token
         const string commandString2 = "update recal_social_database.refreshtoken set replacesId = @oldTokenId where refreshTokenId = @tokenId";
         var command2 = new MySqlCommand(commandString2, connection);
         command2.Parameters.AddWithValue("@tokenId", tokenId);

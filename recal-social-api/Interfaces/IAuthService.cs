@@ -8,6 +8,7 @@ namespace recal_social_api.Interfaces;
 public interface IAuthService
 {
     public string GenerateRefreshToken(int userId);
+    public GetRefreshTokenResponse GetRefreshToken(string token);
     public User VerifyCredentials(string username, string pass);
     public string GetNewAuthToken(string username, string pass);
     public string NewRefreshToken(string oldToken);
