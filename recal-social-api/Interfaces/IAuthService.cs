@@ -13,5 +13,6 @@ public interface IAuthService
     public string GetNewAuthToken(string username, string pass);
     public string NewRefreshToken(string oldToken);
     public string GetAuthToken(string username);
+    public string LogOut(string token);
     public bool UpdatePass(string user, string pass, string newPass);
 }

@@ -78,7 +78,7 @@ public class AuthController : Controller
         var oldRefreshToken = _authService.GetRefreshToken(oldToken);
         
         // If its expired or revoked, doesnt work
-        if (DateTime.Parse(oldRefreshToken.ExpiresAt) <= DateTime.UtcNow && oldRefreshToken.ManuallyRevoked != 1){
+        if (DateTime.Parse(oldRefreshToken.ExpiresAt) <= DateTime.UtcNow | oldRefreshToken.ManuallyRevoked == 1){
             return Task.FromResult<IActionResult>(BadRequest("Token is expired or invalid")); 
         }
         
@@ -111,9 +111,40 @@ public class AuthController : Controller
 
     [AllowAnonymous]
     [HttpPost("token/logout")]
-    public Task<IActionResult> RefreshToken([FromHeader] string yourmom)
+    public Task<IActionResult> RefreshToken()
     {
-        throw new NotImplementedException();
+        Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
+
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(refreshToken);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  
+        var token = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
+        var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
+
+        var cookieRefreshToken = _authService.GetRefreshToken(token);
+        
+        // If its expired or revoked, doesnt work
+        if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow && cookieRefreshToken.ManuallyRevoked != 1){
+            return Task.FromResult<IActionResult>(BadRequest("Token is expired or invalid")); 
+        }
+
+
+        var logout = _authService.LogOut(token);
+
+        if (logout == "Success")
+        {
+            return Task.FromResult<IActionResult>(Ok("Logged Out"));
+        }
+
+        if (logout == "Failed!")
+        {
+            return Task.FromResult<IActionResult>(BadRequest("An error occured when logging out token"));
+        }
+        
+        return Task.FromResult<IActionResult>(BadRequest("An unknown error has occurred"));
     }
     
     

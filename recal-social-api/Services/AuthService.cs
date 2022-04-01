@@ -373,6 +373,30 @@ public class AuthService : IAuthService
         }
     }
 
+    public string LogOut(string token)
+    {
+        // Insert into the DB
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        const string commandString = "update recal_social_database.refreshtoken set revokationDate = @revdate, manuallyRevoked = 1 where token = @token";
+        var command = new MySqlCommand(commandString, connection);
+        command.Parameters.AddWithValue("@token", token);
+        command.Parameters.AddWithValue("@revdate", DateTime.UtcNow);
+
+
+        try
+        {
+            connection.Open();
+            command.ExecuteNonQuery();
+            connection.Close();
+            return "Success";
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return "Failed!";
+        }
+    }
+
     public bool UpdatePass(string user, string pass, string newPass)
     {
         /*using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
