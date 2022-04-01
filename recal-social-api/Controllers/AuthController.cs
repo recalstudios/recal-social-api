@@ -78,8 +78,13 @@ public class AuthController : Controller
         var oldRefreshToken = _authService.GetRefreshToken(oldToken);
         
         // If its expired or revoked, doesnt work
-        if (DateTime.Parse(oldRefreshToken.ExpiresAt) <= DateTime.UtcNow | oldRefreshToken.ManuallyRevoked == 1){
-            return Task.FromResult<IActionResult>(BadRequest("Token is expired or invalid")); 
+        if (DateTime.Parse(oldRefreshToken.ExpiresAt) <= DateTime.UtcNow){
+            return Task.FromResult<IActionResult>(BadRequest("Token is expired")); 
+        }
+
+        if (oldRefreshToken.ManuallyRevoked == 1)
+        {
+            return Task.FromResult<IActionResult>(BadRequest("Token is invalid"));
         }
         
         var user = _userService.GetUserById(Int32.Parse(userId));
@@ -127,8 +132,13 @@ public class AuthController : Controller
         var cookieRefreshToken = _authService.GetRefreshToken(token);
         
         // If its expired or revoked, doesnt work
-        if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow && cookieRefreshToken.ManuallyRevoked != 1){
-            return Task.FromResult<IActionResult>(BadRequest("Token is expired or invalid")); 
+        if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow){
+            return Task.FromResult<IActionResult>(BadRequest("Token is expired")); 
+        }
+
+        if (cookieRefreshToken.ManuallyRevoked == 1)
+        {
+            return Task.FromResult<IActionResult>(BadRequest("Token is invalid"));
         }
 
 
