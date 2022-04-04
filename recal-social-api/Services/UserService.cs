@@ -222,4 +222,22 @@ public class UserService : IUserService
         throw new NotImplementedException();
 
     }
+
+    public IEnumerable<Chatroom> GetUserChatrooms(int userId)
+    {
+        // Psudokode
+        // Get the user_has_chatroom table
+        // Use the chatroom ID's gotten from the table to get information regarding the 
+        // chatrooms from the chatroom table
+        
+        var userChatrooms = new List<Chatroom>();
+        
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        const string commandString = "";
+        var productCommand = new MySqlCommand(commandString, connection);
+        productCommand.Parameters.AddWithValue("@id", userId);
+        
+        
+        throw new NotImplementedException();
+    }
 }
