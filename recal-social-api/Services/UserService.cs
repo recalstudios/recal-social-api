@@ -91,7 +91,34 @@ public class UserService : IUserService
         connection.Close();
         return user;
     }
-    
+
+    public PublicGetUserResponse PublicGetUser(int userId)
+    {
+        var user = new PublicGetUserResponse();
+        
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        const string commandString = "select * from recal_social_database.users where uid = @userId";
+        var command = new MySqlCommand(commandString, connection);
+
+
+
+        command.Parameters.AddWithValue("@userId", userId);
+
+
+        connection.Open();
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            // ID in the User table
+            user.Id = (int) reader["uid"];
+            user.Username = (string) reader["username"];
+            user.Pfp = (string) reader["pfp"];
+        }
+
+        connection.Close();
+        return user;
+    }
+
     public bool CreateUser(string username, string email, string pass, string pfp)
     {
         
@@ -154,27 +181,28 @@ public class UserService : IUserService
         }
 
     }
+    
 
-    public bool UpdateUser(string payloadToken, string? payloadFirstName, string? payloadLastName, string? payloadEmail, int? payloadPhoneNumber, string? payloadPfp)
+    public bool UpdateUser(int payloadUserId, string? payloadUsername, string? payloadPassword, string? payloadEmail, string? payloadPfp)
     {
-        /*
-        var user = GetUser(payloadToken);
-        payloadFirstName ??= user.FirstName;
-        payloadLastName ??= user.LastName;
+        
+        var user = GetUserById(payloadUserId);
+        payloadUsername ??= user.Username;
+        payloadPassword ??= Hash(user.Password);
         payloadEmail ??= user.Email;
-        payloadPhoneNumber ??= user.PhoneNumber;
-        payloadPfp ??= user.pfp;
+        payloadPfp ??= user.Pfp;
+
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "update online_store.user set email = @email , phone_number = @phonenumber , first_name = @firstname , last_name = @lastname , pfp = @pfp where uusername = @username";
+        const string commandString = "update recal_social_database.users set username = @username, passphrase = @pass, email = @email, pfp = @pfp where uid = @userId";
         var command = new MySqlCommand(commandString, connection);
+        command.Parameters.AddWithValue("@userId", payloadUserId);
+        command.Parameters.AddWithValue("@username", payloadUsername);
+        command.Parameters.AddWithValue("@pass", payloadPassword);
         command.Parameters.AddWithValue("@email", payloadEmail);
-        command.Parameters.AddWithValue("@phonenumber", payloadPhoneNumber);
-        command.Parameters.AddWithValue("@firstname", payloadFirstName);
-        command.Parameters.AddWithValue("@lastname", payloadLastName);
         command.Parameters.AddWithValue("@pfp", payloadPfp);
-        command.Parameters.AddWithValue("@username", user.Credentials.Username);
         
+
 
 
 
@@ -190,7 +218,7 @@ public class UserService : IUserService
             Console.WriteLine(e);
             return false;
         }
-        */
+        
         throw new NotImplementedException();
 
     }

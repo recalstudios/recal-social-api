@@ -151,7 +151,7 @@ public class AuthController : Controller
 
         if (logout == "Failed!")
         {
-            return Task.FromResult<IActionResult>(BadRequest("An error occured when logging out token"));
+            return Task.FromResult<IActionResult>(BadRequest("An error occurred when logging out token"));
         }
         
         return Task.FromResult<IActionResult>(BadRequest("An unknown error has occurred"));
@@ -175,28 +175,28 @@ public class AuthController : Controller
 
         var cookieRefreshToken = _authService.GetRefreshToken(token);
         
-        // If its expired or revoked, doesnt work
-        if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow){
-            return Task.FromResult<IActionResult>(BadRequest("Token is expired")); 
-        }
+            // If its expired or revoked, doesnt work
+            if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow){
+                return Task.FromResult<IActionResult>(BadRequest("Token is expired")); 
+            }
 
-        if (cookieRefreshToken.ManuallyRevoked == 1)
-        {
-            return Task.FromResult<IActionResult>(BadRequest("Token is invalid"));
-        }
+            if (cookieRefreshToken.ManuallyRevoked == 1)
+            {
+                return Task.FromResult<IActionResult>(BadRequest("Token is invalid"));
+            }
 
 
-        var logout = _authService.LogOutAll(userId);
+            var logout = _authService.LogOutAll(userId);
 
-        if (logout == "Success")
-        {
-            return Task.FromResult<IActionResult>(Ok("Logged Out"));
-        }
+            if (logout == "Success")
+            {
+                return Task.FromResult<IActionResult>(Ok("Logged Out"));
+            }
 
-        if (logout == "Failed!")
-        {
-            return Task.FromResult<IActionResult>(BadRequest("An error occured when logging out token"));
-        }
+            if (logout == "Failed!")
+            {
+                return Task.FromResult<IActionResult>(BadRequest("An error occurred when logging out token"));
+            }
         
         return Task.FromResult<IActionResult>(BadRequest("An unknown error has occurred"));
     }

@@ -23,7 +23,7 @@ public class UserController : Controller
 
     [Authorize]
     [HttpPost("user")]
-    public GetUserResponse GetUser()
+    public Task<IActionResult> GetUser()
     {
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
@@ -43,13 +43,10 @@ public class UserController : Controller
 
         if (string.IsNullOrEmpty(retUser.Username))
         {
-            return new GetUserResponse()
-            {
-                Status = "User not availible or found"
-            };
+            return Task.FromResult<IActionResult>(NotFound("Username does not exist"));
         }
 
-        return retUser;
+        return Task.FromResult<IActionResult>(Ok(retUser));
 
     }
     
@@ -57,6 +54,13 @@ public class UserController : Controller
     public bool CreateUser([FromBody] CreateUserRequest payload)
     {
         return _userService.CreateUser(payload.Username, payload.Email,  payload.Pass, payload.Pfp);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("user/public")]
+    public PublicGetUserResponse PublicGetUser([FromBody]int userId)
+    {
+        return _userService.PublicGetUser(userId);
     }
 
     [Authorize]
@@ -80,9 +84,25 @@ public class UserController : Controller
         return _userService.DeleteUser(username);
     }
 
+    [Authorize]
     [HttpPost("update")]
     public bool UpdateUser([FromBody] UpdateUserRequest payload)
     {
-        return _userService.UpdateUser(payload.Token, payload.FirstName, payload.LastName, payload.Email, payload.PhoneNumber, payload.Pfp);
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(stream);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Sets the variable username to the username from the token
+        var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
+        
+        return _userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Password, payload.Email, payload.Pfp);
     }
 }
