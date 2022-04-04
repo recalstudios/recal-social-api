@@ -114,9 +114,9 @@ public class AuthController : Controller
         
         
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("token/logout")]
-    public Task<IActionResult> RefreshToken()
+    public Task<IActionResult> Logout()
     {
         Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
 
@@ -143,6 +143,51 @@ public class AuthController : Controller
 
 
         var logout = _authService.LogOut(token);
+
+        if (logout == "Success")
+        {
+            return Task.FromResult<IActionResult>(Ok("Logged Out"));
+        }
+
+        if (logout == "Failed!")
+        {
+            return Task.FromResult<IActionResult>(BadRequest("An error occured when logging out token"));
+        }
+        
+        return Task.FromResult<IActionResult>(BadRequest("An unknown error has occurred"));
+    }
+    
+    
+    [AllowAnonymous]
+    [HttpPost("token/logout/all")]
+    public Task<IActionResult> LogoutAll()
+    {
+        Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
+
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(refreshToken);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Get claims from the token
+        var token = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
+        var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
+
+        var cookieRefreshToken = _authService.GetRefreshToken(token);
+        
+        // If its expired or revoked, doesnt work
+        if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow){
+            return Task.FromResult<IActionResult>(BadRequest("Token is expired")); 
+        }
+
+        if (cookieRefreshToken.ManuallyRevoked == 1)
+        {
+            Console.WriteLine(cookieRefreshToken);
+            return Task.FromResult<IActionResult>(BadRequest("Token is invalid"));
+        }
+
+
+        var logout = _authService.LogOutAll(userId);
 
         if (logout == "Success")
         {
