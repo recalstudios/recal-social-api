@@ -182,7 +182,6 @@ public class AuthController : Controller
 
         if (cookieRefreshToken.ManuallyRevoked == 1)
         {
-            Console.WriteLine(cookieRefreshToken);
             return Task.FromResult<IActionResult>(BadRequest("Token is invalid"));
         }
 
