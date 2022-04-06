@@ -11,4 +11,5 @@ public interface IUserService
     public bool CreateUser(string username, string email, string pass, string pfp);
     public bool DeleteUser(string username);
     bool UpdateUser(int payloadUserId, string? payloadUsername,string? payloadPassword, string? payloadEmail, string? payloadPfp);
+    public IEnumerable<GetUserChatroomsResponse> GetUserChatrooms(int userId);
 }

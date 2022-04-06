@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
 using recal_social_api.Interfaces;
 using recal_social_api.Models;
@@ -223,21 +224,57 @@ public class UserService : IUserService
 
     }
 
-    public IEnumerable<Chatroom> GetUserChatrooms(int userId)
+    public IEnumerable<GetUserChatroomsResponse> GetUserChatrooms(int userId)
     {
         // Psudokode
         // Get the user_has_chatroom table
         // Use the chatroom ID's gotten from the table to get information regarding the 
         // chatrooms from the chatroom table
         
-        var userChatrooms = new List<Chatroom>();
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "";
-        var productCommand = new MySqlCommand(commandString, connection);
-        productCommand.Parameters.AddWithValue("@id", userId);
+
+        var chatrooms = new List<GetUserChatroomsResponse>();
+        var users = new List<UserHasRoomResponse>();
+
+        
+        const string selectRooms = "select cid, name,image, code, pass, lastActive from recal_social_database.chatrooms, recal_social_database.users_chatrooms where chatroom_cid = chatrooms.cid and users_uid = @id";
+        var roomCommand = new MySqlCommand(selectRooms, connection);
+        roomCommand.Parameters.AddWithValue("@id", userId);
+
+        const string selectUser = "select chatroom_cid, uid, username, pfp from recal_social_database.users_chatrooms, recal_social_database.users where users_chatrooms.users_uid = uid";
+        var userCommand = new MySqlCommand(selectUser, connection);
+
+        connection.Open();
+        using var userReader = userCommand.ExecuteReader();
+        while (userReader.Read())
+        {
+            users.Add(new UserHasRoomResponse()
+            {
+                Id = (int) userReader["uid"],
+                Username = (string) userReader["username"],
+                Pfp = (string) userReader["pfp"],
+                ChatroomId = (int) userReader["chatroom_cid"]
+            });
+        }
+        connection.Close();
         
         
-        throw new NotImplementedException();
+        connection.Open();
+        using var roomReader = roomCommand.ExecuteReader();
+        while (roomReader.Read())
+        {
+            var id = (int) roomReader["cid"];
+            chatrooms.Add(new GetUserChatroomsResponse()
+            {
+                Id = id,
+                Name = (string) roomReader["name"],
+                Image = (string) roomReader["image"],
+                Users = users.Where(p => p.ChatroomId == id),
+            });
+        }
+        
+
+        return chatrooms;
     }
 }
