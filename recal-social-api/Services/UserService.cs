@@ -120,7 +120,7 @@ public class UserService : IUserService
         return user;
     }
 
-    public bool CreateUser(string username, string email, string pass, string pfp)
+    public bool CreateUser(string username, string email, string pass)
     {
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
@@ -134,7 +134,7 @@ public class UserService : IUserService
         userCommand.Parameters.AddWithValue("@pass", Hash(pass));
         userCommand.Parameters.AddWithValue("@username", username);
         userCommand.Parameters.AddWithValue("@email", email);
-        userCommand.Parameters.AddWithValue("@pfp", pfp);
+        userCommand.Parameters.AddWithValue("@pfp", "https://via.placeholder.com/50");
         
         
 

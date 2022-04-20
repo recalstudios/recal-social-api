@@ -50,10 +50,11 @@ public class UserController : Controller
 
     }
     
+    [AllowAnonymous]
     [HttpPost("create")]
     public bool CreateUser([FromBody] CreateUserRequest payload)
     {
-        return _userService.CreateUser(payload.Username, payload.Email,  payload.Pass, payload.Pfp);
+        return _userService.CreateUser(payload.Username, payload.Email, payload.Pass);
     }
 
     [AllowAnonymous]
