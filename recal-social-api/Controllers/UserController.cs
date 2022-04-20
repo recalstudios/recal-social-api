@@ -115,7 +115,7 @@ public class UserController : Controller
     }
 
     [AllowAnonymous]
-    [HttpPost("rooms")]
+    [HttpGet("rooms")]
     public IEnumerable<GetUserChatroomsResponse> GetUsersChatrooms()
     {
         //  Gets the http request headers
