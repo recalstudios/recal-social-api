@@ -18,6 +18,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
+// Importing interfaces as services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IChatService, ChatService>();
@@ -30,6 +31,7 @@ builder.WebHost.UseKestrel(serverOptions =>
     });
 });
 
+// Cross Origin Resource Sharing (CORS) Policy
 builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", b =>
 {
     b.AllowAnyOrigin()

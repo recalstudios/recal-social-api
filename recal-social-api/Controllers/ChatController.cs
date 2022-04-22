@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
+using recal_social_api.Models.Requests;
+using recal_social_api.Models.Responses;
 
 namespace recal_social_api.Controllers;
 [ApiController]
@@ -10,18 +12,19 @@ public class ChatController : Controller
 { 
     private readonly IAuthService _authService;
     private readonly IUserService _userService;
+    private readonly IChatService _chatService;
 
-    public ChatController(IAuthService authService, IUserService userService)
+    public ChatController(IAuthService authService, IUserService userService, IChatService chatService)
     {
         _authService = authService;
         _userService = userService;
+        _chatService = chatService;
     }
     
     [Authorize]
-    [HttpPost("")]
-    public Task<IActionResult> GetUser()
+    [HttpPost("room/backlog")]
+    public GetChatroomMessagesResponse GetChatLog([FromBody] GetChatroomMessagesRequests payload)
     {
-        /*
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
@@ -35,16 +38,8 @@ public class ChatController : Controller
         var tokenS = jsonToken as JwtSecurityToken;
         
         //  Sets the variable username to the username from the token
-        var username = tokenS!.Claims.First(claim => claim.Type == "Username").Value;
-        var retUser = _userService.GetUser(username);
-
-        if (string.IsNullOrEmpty(retUser.Username))
-        {
-            return Task.FromResult<IActionResult>(NotFound("Username does not exist"));
-        }
-
-        return Task.FromResult<IActionResult>(Ok(retUser));
-        */
-        throw new NotImplementedException();
+        var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
+        
+        return _chatService.GetChatroomMessages(payload.ChatroomId, userId, payload.Start, payload.Length);
     }
 }

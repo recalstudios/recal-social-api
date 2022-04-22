@@ -65,13 +65,6 @@ public class UserController : Controller
     }
 
     [Authorize]
-    [HttpPost]
-    public IEnumerable<Chatroom> GetUserChatrooms()
-    {
-        throw new NotImplementedException();
-    }
-
-    [Authorize]
     [HttpDelete("delete")]
     public bool DeleteUser()
     {
