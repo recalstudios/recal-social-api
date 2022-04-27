@@ -1,4 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System.Collections;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
@@ -58,6 +59,44 @@ public class AuthController : Controller
 
         return Task.FromResult<IActionResult>(Ok(response.AuthToken));
 
+    }
+
+    [AllowAnonymous]
+    [HttpPost("token/test")]
+    public bool CheckExpiration()
+    {
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(stream);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Gets expirations form token and current time
+        var expiration = double.Parse(tokenS!.Claims.First(claim => claim.Type == "exp").Value);
+        
+        // Converts to datetime
+        DateTime expiationDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        expiationDate = expiationDate.AddSeconds(expiration).ToLocalTime();
+
+        var now = DateTime.Now;
+        
+        
+        //Returns 0 if the same time
+        var compare = DateTime.Compare(expiationDate, now);
+        
+
+        if (compare >= 0)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     [AllowAnonymous]
