@@ -66,8 +66,9 @@ public class ChatService : IChatService
     }
 
     
-    public bool SaveChatMessage(int UserId, string Data, int ChatId)
+    public int SaveChatMessage(int UserId, string Data, int ChatId)
     {
+        var id = 0;
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
        
         
@@ -77,18 +78,31 @@ public class ChatService : IChatService
         messageCommand.Parameters.AddWithValue("@data", Data);
         messageCommand.Parameters.AddWithValue("@cid", ChatId);
         
+        const string readMessages = "select id from recal_social_database.messages where uid = @uid and data = @data and cid = @cid";
+        var readCommand = new MySqlCommand(readMessages, connection);
+        readCommand.Parameters.AddWithValue("@uid", UserId);
+        readCommand.Parameters.AddWithValue("@data", Data);
+        readCommand.Parameters.AddWithValue("@cid", ChatId);
         
         try
         {
             connection.Open();
             messageCommand.ExecuteNonQuery();
+            using var reader = readCommand.ExecuteReader();
+            while (reader.Read())
+            {
+                id = (int) reader["id"];
+            }
             connection.Close();
-            return true;
+            
+            return id;
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
-            return false;
+            return 0;
         }
     }
+    
+    //public bool DeleteChatMessage()
 }

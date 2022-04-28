@@ -46,7 +46,7 @@ public class ChatController : Controller
 
     [Authorize]
     [HttpPost("room/message/save")]
-    public bool SaveMessage([FromBody] SaveMessageRequest payload)
+    public int SaveMessage([FromBody] SaveMessageRequest payload)
     {
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
@@ -71,6 +71,6 @@ public class ChatController : Controller
         {
             return _chatService.SaveChatMessage(userId, payload.Data, payload.ChatroomId);
         }
-        return false;
+        return 0;
     }
 }
