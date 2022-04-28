@@ -6,4 +6,5 @@ public interface IChatService
 { 
     public GetChatroomMessagesResponse GetChatroomMessages(int ChatroomId, int UserId, int Start, int Lenght);
     public int SaveChatMessage(int UserId, string Data, int RoomId);
+    public bool DeleteChatMessage(int MessageId, int UserId);
 }

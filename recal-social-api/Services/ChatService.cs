@@ -103,6 +103,46 @@ public class ChatService : IChatService
             return 0;
         }
     }
-    
-    //public bool DeleteChatMessage()
+
+    public bool DeleteChatMessage(int MessageId, int UserId)
+    {
+        Int64 count = 0;
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+       
+        
+        const string selectMessages = "delete from recal_social_database.messages where id = @mid and uid = @uid";
+        var messageCommand = new MySqlCommand(selectMessages, connection);
+        messageCommand.Parameters.AddWithValue("@mid", MessageId);
+        messageCommand.Parameters.AddWithValue("@uid", UserId);
+        
+        
+        
+        const string readMessages = "select count(*) from recal_social_database.messages where id = @mid and uid = @uid";
+        var readCommand = new MySqlCommand(readMessages, connection);
+        readCommand.Parameters.AddWithValue("@mid", MessageId);
+        readCommand.Parameters.AddWithValue("@uid", UserId);
+        try
+        {
+            connection.Open();
+            messageCommand.ExecuteNonQuery();
+            using var reader = readCommand.ExecuteReader();
+            while (reader.Read())
+            {
+                count = (Int64) reader[0];
+            }
+            connection.Close();
+
+            if (count == 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+    }
 }
