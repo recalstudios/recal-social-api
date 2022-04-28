@@ -81,22 +81,22 @@ public class AuthController : Controller
         var expiration = double.Parse(tokenS!.Claims.First(claim => claim.Type == "exp").Value);
         
         // Converts to datetime
-        DateTime expiationDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        expiationDate = expiationDate.AddSeconds(expiration).ToLocalTime();
+        DateTime expirationDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        expirationDate = expirationDate.AddSeconds(expiration).ToLocalTime();
 
         var now = DateTime.Now;
         
         
         //Returns 0 if the same time
-        var compare = DateTime.Compare(expiationDate, now);
+        var compare = DateTime.Compare(expirationDate, now);
         
 
         if (compare >= 0)
         {
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     [AllowAnonymous]

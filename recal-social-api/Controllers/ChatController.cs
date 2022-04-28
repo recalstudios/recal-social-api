@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.IO.Pipes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
@@ -41,5 +42,37 @@ public class ChatController : Controller
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
         
         return _chatService.GetChatroomMessages(payload.ChatroomId, userId, payload.Start, payload.Length);
+    }
+
+    [Authorize]
+    [HttpPost("room/message/save")]
+    public bool SaveMessage([FromBody] SaveMessageRequest payload)
+    {
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(stream);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Sets the variable username to the username from the token
+        var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
+
+        //  List of all rooms user is in
+        var roomlists = _userService.GetUserChatrooms(userId);
+
+        //  Uses black magic to find out if it is yes
+        if (roomlists.Any(x => x.Id == payload.ChatroomId))
+        {
+            return _chatService.SaveChatMessage(userId, payload.Data, payload.ChatroomId);
+        }
+        
+        Console.WriteLine("Yourmomisgae");
+        return false;
     }
 }

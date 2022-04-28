@@ -26,6 +26,7 @@ public class ChatService : IChatService
         _userService = userService;
     }
 
+    
     public GetChatroomMessagesResponse GetChatroomMessages(int ChatroomId, int UserId, int Start, int Lenght)
     {
         var response = new GetChatroomMessagesResponse();
@@ -62,5 +63,32 @@ public class ChatService : IChatService
         response.Messages = messages;
 
         return response;
+    }
+
+    
+    public bool SaveChatMessage(int UserId, string Data, int ChatId)
+    {
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+       
+        
+        const string selectMessages = "insert into recal_social_database.messages (uid, data, cid) values (@uid, @data, @cid)";
+        var messageCommand = new MySqlCommand(selectMessages, connection);
+        messageCommand.Parameters.AddWithValue("@uid", UserId);
+        messageCommand.Parameters.AddWithValue("@data", Data);
+        messageCommand.Parameters.AddWithValue("@cid", ChatId);
+        
+        
+        try
+        {
+            connection.Open();
+            messageCommand.ExecuteNonQuery();
+            connection.Close();
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
     }
 }
