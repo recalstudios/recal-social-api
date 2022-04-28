@@ -71,8 +71,6 @@ public class ChatController : Controller
         {
             return _chatService.SaveChatMessage(userId, payload.Data, payload.ChatroomId);
         }
-        
-        Console.WriteLine("Yourmomisgae");
         return false;
     }
 }
