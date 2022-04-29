@@ -151,8 +151,7 @@ public class AuthController : Controller
 
     }
         
-        
-
+    
     [Authorize]
     [HttpPost("token/logout")]
     public Task<IActionResult> Logout()
@@ -197,7 +196,7 @@ public class AuthController : Controller
     }
     
     
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("token/logout/all")]
     public Task<IActionResult> LogoutAll()
     {

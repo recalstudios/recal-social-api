@@ -107,7 +107,7 @@ public class UserController : Controller
         return _userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Password, payload.Email, payload.Pfp);
     }
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpGet("rooms")]
     public IEnumerable<GetUserChatroomsResponse> GetUsersChatrooms()
     {
