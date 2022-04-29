@@ -26,6 +26,7 @@ public class AuthController : Controller
 
     [AllowAnonymous]
     [HttpPost("token/new")]
+    // Creates a new AuthToken and a renewtoken
     public Task<IActionResult> Post([FromBody] VerifyUserRequest payload)
     {
         var response = new GetJwtTokenResponse();
@@ -87,10 +88,11 @@ public class AuthController : Controller
         var now = DateTime.Now;
         
         
-        //Returns 0 if the same time
+        //  Returns less than zero if expiration is before now
         var compare = DateTime.Compare(expirationDate, now);
         
 
+        //  Returns true if the token is expired and false if it still works
         if (compare >= 0)
         {
             return true;
@@ -104,6 +106,11 @@ public class AuthController : Controller
     public Task<IActionResult> ChainToken()
     {
         Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
+
+        if (refreshToken == null)
+        {
+            return Task.FromResult<IActionResult>(BadRequest("Token cannot be null"));
+        }
 
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
