@@ -26,7 +26,7 @@ public class ChatService : IChatService
         _userService = userService;
     }
 
-    
+// Message part of service
     public GetChatroomMessagesResponse GetChatroomMessages(int ChatroomId, int UserId, int Start, int Lenght)
     {
         var response = new GetChatroomMessagesResponse();
@@ -144,5 +144,12 @@ public class ChatService : IChatService
             Console.WriteLine(e);
             return false;
         }
+    }
+    
+// Room part of service
+    public bool CreateChatroom(string Name, string Pass, DateTime LastActive)
+    {
+        
+        return true;
     }
 }

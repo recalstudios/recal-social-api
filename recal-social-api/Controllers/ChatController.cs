@@ -22,6 +22,7 @@ public class ChatController : Controller
         _chatService = chatService;
     }
     
+// Message part of chatrooms
     [Authorize]
     [HttpPost("room/backlog")]
     public GetChatroomMessagesResponse GetChatLog([FromBody] GetChatroomMessagesRequests payload)
@@ -96,5 +97,43 @@ public class ChatController : Controller
         
         
         return _chatService.DeleteChatMessage(payload.MessageId, userId);
+    }
+    
+// Room part of chatrooms
+
+// Can i change the path of backlog? Should i return the room when creating it?
+    [Authorize]
+    [HttpPost("room/create")]
+    public bool CreateChatroom()
+    {
+        throw new NotImplementedException();
+    }
+    
+    [Authorize]
+    [HttpPost("room/update")]
+    public bool UpdateChatroom()
+    {
+        throw new NotImplementedException();
+    }
+    
+    [Authorize]
+    [HttpPost("room/delete")]
+    public bool DeleteChatroom()
+    {
+        throw new NotImplementedException();
+    }
+    
+    [Authorize]
+    [HttpPost("room/join")]
+    public bool JoinChatroom()
+    {
+        throw new NotImplementedException();
+    }
+    
+    [Authorize]
+    [HttpPost("room/leave")]
+    public bool LeaveChatroom()
+    {
+        throw new NotImplementedException();
     }
 }
