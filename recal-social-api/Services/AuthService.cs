@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using MySqlConnector;
+using recal_social_api;
 using recal_social_api.Interfaces;
 using recal_social_api.Models;
 using recal_social_api.Models.Responses;
@@ -340,7 +341,7 @@ public class AuthService : IAuthService
                     _configuration["Jwt:Issuer"],
                     _configuration["Jwt:Audience"],
                     claims,
-                    expires: DateTime.UtcNow.AddMinutes(10),
+                    expires: DateTime.UtcNow.AddMinutes(7200),
                     signingCredentials: signIn);
 
                 return new JwtSecurityTokenHandler().WriteToken(token).ToString();
@@ -445,37 +446,5 @@ public class AuthService : IAuthService
             Console.WriteLine(e);
             return "Failed!";
         }
-    }
-
-    public bool UpdatePass(string user, string pass, string newPass)
-    {
-        /*using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "update recal_social_database.users set passphrase = @newPass where username = @username and passphrase = @pass";
-        var command = new MySqlCommand(commandString, connection);
-
-        var passBytes = Encoding.UTF8.GetBytes(pass);
-        var passHash = SHA256.Create().ComputeHash(passBytes);
-        
-        var newPassBytes = Encoding.UTF8.GetBytes(newPass);
-        var newPassHash = SHA256.Create().ComputeHash(newPassBytes);
-        
-        command.Parameters.AddWithValue("@username", user);
-        command.Parameters.AddWithValue("@pass", ByteArrayToString(passHash));
-        command.Parameters.AddWithValue("@newPass", ByteArrayToString(newPassHash));
-
-        
-        try
-        {
-            connection.Open();
-            command.ExecuteNonQuery();
-            connection.Close();
-            return true;
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return false;
-        }*/
-        throw new NotImplementedException();
     }
 }
