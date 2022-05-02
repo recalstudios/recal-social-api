@@ -184,22 +184,20 @@ public class UserService : IUserService
     }
     
 
-    public bool UpdateUser(int payloadUserId, string? payloadUsername, string? payloadPassword, string? payloadEmail, string? payloadPfp)
+    public bool UpdateUser(int payloadUserId, string? payloadUsername, string? payloadEmail, string? payloadPfp)
     {
         
         var user = GetUserById(payloadUserId);
         payloadUsername ??= user.Username;
-        payloadPassword ??= Hash(user.Password);
         payloadEmail ??= user.Email;
         payloadPfp ??= user.Pfp;
 
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "update recal_social_database.users set username = @username, passphrase = @pass, email = @email, pfp = @pfp where uid = @userId";
+        const string commandString = "update recal_social_database.users set username = @username, email = @email, pfp = @pfp where uid = @userId";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@userId", payloadUserId);
         command.Parameters.AddWithValue("@username", payloadUsername);
-        command.Parameters.AddWithValue("@pass", payloadPassword);
         command.Parameters.AddWithValue("@email", payloadEmail);
         command.Parameters.AddWithValue("@pfp", payloadPfp);
         

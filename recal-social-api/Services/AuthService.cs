@@ -288,6 +288,31 @@ public class AuthService : IAuthService
         return userdata;
     }
 
+    public bool UpdateCredentials(int userId, string pass, string newPass)
+    {
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        const string commandString = "update recal_social_database.users set passphrase = @newPass where uid = @userid and passphrase = @pass";
+        var command = new MySqlCommand(commandString, connection);
+        
+        
+        command.Parameters.AddWithValue("@userid", userId);
+        command.Parameters.AddWithValue("@pass", Hash(pass));
+        command.Parameters.AddWithValue("@newPass", Hash(newPass));
+
+        
+        try
+        {
+            connection.Open();
+            command.ExecuteNonQuery();
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+    }
+
     public string GetNewAuthToken(string username, string pass)
     {
         //  If username isn't empty, starts creating JWT token

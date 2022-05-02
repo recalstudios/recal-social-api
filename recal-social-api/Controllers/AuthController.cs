@@ -24,6 +24,28 @@ public class AuthController : Controller
         _userService = userService;
     }
 
+    [Authorize]
+    [HttpPost("update/pass")]
+    public bool UpdateCredentials([FromBody] UpdateCredentialsRequest payload)
+    {
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(stream);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Sets the variable userid to the userid from the token
+        var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
+        
+        return _authService.UpdateCredentials(int.Parse(userId), payload.Pass, payload.NewPass);
+    }
+    
     [AllowAnonymous]
     [HttpPost("token/new")]
     // Creates a new AuthToken and a renewtoken

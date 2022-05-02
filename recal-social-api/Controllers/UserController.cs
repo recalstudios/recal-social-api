@@ -59,9 +59,9 @@ public class UserController : Controller
 
     [AllowAnonymous]
     [HttpPost("user/public")]
-    public PublicGetUserResponse PublicGetUser([FromBody]int userId)
+    public PublicGetUserResponse PublicGetUser([FromBody]PublicGetUserRequest payload)
     {
-        return _userService.PublicGetUser(userId);
+        return _userService.PublicGetUser(payload.UserId);
     }
 
     [Authorize]
@@ -104,7 +104,7 @@ public class UserController : Controller
         //  Sets the variable username to the username from the token
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
         
-        return _userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Password, payload.Email, payload.Pfp);
+        return _userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Email, payload.Pfp);
     }
 
     [Authorize]
