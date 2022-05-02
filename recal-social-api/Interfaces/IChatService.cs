@@ -5,10 +5,12 @@ namespace recal_social_api.Interfaces;
 public interface IChatService
 { 
 // Message part of the interface
-    public GetChatroomMessagesResponse GetChatroomMessages(int ChatroomId, int UserId, int Start, int Lenght);
-    public int SaveChatMessage(int UserId, string Data, int RoomId);
-    public bool DeleteChatMessage(int MessageId, int UserId);
+    public GetChatroomMessagesResponse GetChatroomMessages(int chatroomId, int userId, int start, int lenght);
+    public int SaveChatMessage(int userId, string data, int roomId);
+    public bool DeleteChatMessage(int messageId, int userId);
 
 // Room part of the interface
-    public bool CreateChatroom(string Name, string Pass, int UserId);
+    public bool CreateChatroom(string name, string pass, int userId);
+
+    public bool JoinChatroom(string code, string pass, int userId);
 }

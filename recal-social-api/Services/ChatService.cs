@@ -220,4 +220,61 @@ public class ChatService : IChatService
             return false;
         }
     }
+
+    public bool JoinChatroom(string code, string pass, int userId)
+    {
+        var cid = new int?();
+        
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        
+        
+        // Get the chatroom id
+        const string selectCommandString = "select cid from recal_social_database.chatrooms where code = @code and pass = @pass";
+        var selectCommand = new MySqlCommand(selectCommandString, connection);
+        selectCommand.Parameters.AddWithValue("@code", code);
+        selectCommand.Parameters.AddWithValue("@pass", pass);
+        
+        // Runs fetching
+        try
+        {
+            connection.Open();
+            using var reader = selectCommand.ExecuteReader();
+            while (reader.Read())
+            {
+                cid = (int) reader["cid"];
+            }
+            connection.Close();
+  
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(cid.ToString()))
+        {
+            return false;
+        }
+        
+        // Adds to chatroom
+        const string joinCommandString = "insert into recal_social_database.users_chatrooms (users_uid, chatroom_cid) values (@uid, @cid)";
+        var joinCommand = new MySqlCommand(joinCommandString, connection);
+        joinCommand.Parameters.AddWithValue("@uid", userId);
+        joinCommand.Parameters.AddWithValue("@cid", cid);
+
+        // Adds user to chatroom with previously obtained data
+        try
+        {
+            connection.Open();
+            joinCommand.ExecuteNonQuery();
+            connection.Close();
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+    }
 }
