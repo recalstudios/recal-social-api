@@ -132,9 +132,24 @@ public class ChatController : Controller
     
     [Authorize]
     [HttpPost("room/delete")]
-    public bool DeleteChatroom()
+    public bool DeleteChatroom([FromBody] DeleteChatroomRequest payload)
     {
-        throw new NotImplementedException();
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(stream);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Sets the variable username to the username from the token
+        var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
+
+        return _chatService.DeleteChatroom(userId, payload.ChatroomId);
     }
     
     [Authorize]
@@ -161,8 +176,23 @@ public class ChatController : Controller
     
     [Authorize]
     [HttpPost("room/leave")]
-    public bool LeaveChatroom()
+    public bool LeaveChatroom([FromBody] LeaveChatroomRequest payload)
     {
-        throw new NotImplementedException();
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(stream);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Sets the variable username to the username from the token
+        var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
+
+        return _chatService.LeaveChatroom(userId, payload.ChatroomId);
     }
 }
