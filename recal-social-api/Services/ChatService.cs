@@ -240,7 +240,7 @@ public class ChatService : IChatService
             {
                 result.ChatroomId = (int) reader["cid"];
                 result.Name = (string) reader["name"];
-                result.Name = (string) reader["image"];
+                result.Image = (string) reader["image"];
                 result.Code = (string) reader["code"];
                 result.Pass = (string) reader["pass"];
                 result.LastActive = (DateTime) reader["lastActive"];
@@ -257,9 +257,41 @@ public class ChatService : IChatService
         return result;
     }
 
-    public bool UpdateChatroom(int userId, int chatroomId, string name, string image, string pass)
+    public bool UpdateChatroom(int userId, int chatroomId, string? payloadName, string? payloadImage, string? payloadPass)
     {
-        throw new NotImplementedException();
+        var chatroom = DetailsChatroom(userId, chatroomId);
+
+        if (string.IsNullOrEmpty(chatroom.Name))
+        {
+            return false;
+        }
+        
+        payloadName ??= chatroom.Name;
+        payloadImage ??= chatroom.Image;
+        payloadPass ??= chatroom.Code;
+
+        
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        const string commandString = "update recal_social_database.chatrooms set name = @name, image = @image, pass = @pass where cid = @cid";
+        var command = new MySqlCommand(commandString, connection);
+        command.Parameters.AddWithValue("@cid", chatroomId);
+        command.Parameters.AddWithValue("@name", payloadName);
+        command.Parameters.AddWithValue("@image", payloadImage);
+        command.Parameters.AddWithValue("@pass", payloadPass);
+        
+
+        try
+        {
+            connection.Open();
+            command.ExecuteNonQuery();
+            connection.Close();
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
     }
 
     public bool DeleteChatroom(int userId, int chatroomId)

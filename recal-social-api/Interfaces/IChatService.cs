@@ -15,7 +15,7 @@ public interface IChatService
 
     public Chatroom DetailsChatroom(int userId, int chatroomId);
 
-    public bool UpdateChatroom(int userId, int chatroomId, string name, string image, string pass);
+    public bool UpdateChatroom(int userId, int chatroomId, string? payloadName, string? payloadImage, string? payloadPass);
 
     public bool DeleteChatroom(int userId, int chatroomId);
 

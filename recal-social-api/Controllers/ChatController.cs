@@ -148,9 +148,24 @@ public class ChatController : Controller
     
     [Authorize]
     [HttpPost("room/update")]
-    public bool UpdateChatroom()
+    public bool UpdateChatroom([FromBody] UpdateChatroomRequest payload)
     {
-        throw new NotImplementedException();
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
+        //  Does some JWT magic
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(stream);
+        var tokenS = jsonToken as JwtSecurityToken;
+        
+        //  Sets the variable username to the username from the token
+        var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
+
+        return _chatService.UpdateChatroom(userId, payload.ChatroomId, payload.Name, payload.Image, payload.Pass);
     }
     
     [Authorize]

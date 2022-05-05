@@ -218,18 +218,10 @@ public class UserService : IUserService
             return false;
         }
         
-        throw new NotImplementedException();
-
     }
 
     public IEnumerable<GetUserChatroomsResponse> GetUserChatrooms(int userId)
     {
-        // Psudokode
-        // Get the user_has_chatroom table
-        // Use the chatroom ID's gotten from the table to get information regarding the 
-        // chatrooms from the chatroom table
-        
-        
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
 
         var chatrooms = new List<GetUserChatroomsResponse>();
