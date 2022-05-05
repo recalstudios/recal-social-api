@@ -70,7 +70,7 @@ public class ChatController : Controller
         //  Uses black magic to find out if user is in chatroom
         if (roomlists.Any(x => x.Id == payload.ChatroomId))
         {
-            return _chatService.SaveChatMessage(userId, payload.Data, payload.ChatroomId);
+            return _chatService.SaveChatMessage(userId, payload.ChatroomId, payload.Content);
         }
         return 0;
     }

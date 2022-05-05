@@ -2,6 +2,6 @@
 
 public class SaveMessageRequest
 {
-    public string Data { get; set; } = null!;
     public int ChatroomId { get; set; }
+    public MessageContent Content { get; set; } = null!;
 }

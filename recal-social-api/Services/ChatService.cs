@@ -33,29 +33,35 @@ public class ChatService : IChatService
         var response = new GetChatroomMessagesResponse();
         var messages = new List<Message>();
         int end = start + lenght;
+
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
 
         
         
-        const string selectMessages = "select id, uid, data, timestamp from recal_social_database.messages where uid = @uid and cid = @cid order by timestamp desc limit @start,@end";
+        const string selectMessages = "select id, uid, text, timestamp from recal_social_database.messages where uid = @uid and cid = @cid order by timestamp desc limit @start,@end";
         var messageCommand = new MySqlCommand(selectMessages, connection);
         messageCommand.Parameters.AddWithValue("@cid", chatroomId);
         messageCommand.Parameters.AddWithValue("@uid", userId);
         messageCommand.Parameters.AddWithValue("@start", start);
         messageCommand.Parameters.AddWithValue("@end", end);
-        
-        
+
+
         connection.Open();
         using var messageReader = messageCommand.ExecuteReader();
         while (messageReader.Read())
         {
             messages.Add(new Message()
             {
-                MessageId = (int) messageReader["id"],
-                Data = (string) messageReader["data"],
-                AuthorId = (int) messageReader["uid"],
-                Time = (DateTime) messageReader["timestamp"]
+                id = (int) messageReader["id"],
+                type = "message",
+                room = chatroomId,
+                author = (int) messageReader["uid"],
+                content = new MessageContent()
+                {
+                    Text = (string) messageReader["text"]
+                },
+                timestamp = (DateTime) messageReader["timestamp"]
             });
         }
         connection.Close();
@@ -66,22 +72,23 @@ public class ChatService : IChatService
         return response;
     }
 
-    public int SaveChatMessage(int userId, string data, int chatId)
+    
+    public int SaveChatMessage(int userId, int chatId, MessageContent content)
     {
         var id = 0;
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
        
         
-        const string selectMessages = "insert into recal_social_database.messages (uid, data, cid) values (@uid, @data, @cid)";
+        const string selectMessages = "insert into recal_social_database.messages (uid, text, cid) values (@uid, @text, @cid)";
         var messageCommand = new MySqlCommand(selectMessages, connection);
         messageCommand.Parameters.AddWithValue("@uid", userId);
-        messageCommand.Parameters.AddWithValue("@data", data);
+        messageCommand.Parameters.AddWithValue("@text", content.Text);
         messageCommand.Parameters.AddWithValue("@cid", chatId);
         
-        const string readMessages = "select id from recal_social_database.messages where uid = @uid and data = @data and cid = @cid";
+        const string readMessages = "select id from recal_social_database.messages where uid = @uid and text = @text and cid = @cid";
         var readCommand = new MySqlCommand(readMessages, connection);
         readCommand.Parameters.AddWithValue("@uid", userId);
-        readCommand.Parameters.AddWithValue("@data", data);
+        readCommand.Parameters.AddWithValue("@text", content.Text);
         readCommand.Parameters.AddWithValue("@cid", chatId);
         
         try
@@ -110,8 +117,8 @@ public class ChatService : IChatService
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
        
         
-        const string selectMessages = "delete from recal_social_database.messages where id = @mid and uid = @uid";
-        var messageCommand = new MySqlCommand(selectMessages, connection);
+        const string deleteMessages = "delete from recal_social_database.messages where id = @mid and uid = @uid";
+        var messageCommand = new MySqlCommand(deleteMessages, connection);
         messageCommand.Parameters.AddWithValue("@mid", messageId);
         messageCommand.Parameters.AddWithValue("@uid", userId);
         
