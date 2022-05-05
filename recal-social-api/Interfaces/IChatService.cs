@@ -13,6 +13,10 @@ public interface IChatService
 // Room part of the interface
     public bool CreateChatroom(string name, string pass, int userId);
 
+    public Chatroom DetailsChatroom(int userId, int chatroomId);
+
+    public bool UpdateChatroom(int userId, int chatroomId, string name, string image, string pass);
+
     public bool DeleteChatroom(int userId, int chatroomId);
 
     public bool JoinChatroom(string code, string pass, int userId);

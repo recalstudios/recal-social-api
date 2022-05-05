@@ -219,6 +219,49 @@ public class ChatService : IChatService
         }
     }
 
+    public Chatroom DetailsChatroom(int userId, int chatroomId)
+    {
+        var result = new Chatroom();
+        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        
+        // Get the chatroom id
+        const string selectCommandString = "select cid, name, image, code, pass, lastActive from recal_social_database.chatrooms, recal_social_database.users_chatrooms where chatrooms.cid = users_chatrooms.chatroom_cid and cid = @cid and users_uid = @uid";
+        var selectCommand = new MySqlCommand(selectCommandString, connection);
+        selectCommand.Parameters.AddWithValue("@uid", userId);
+        selectCommand.Parameters.AddWithValue("@cid", chatroomId);
+
+        
+        // Runs creation and fetching
+        try
+        {
+            connection.Open();
+            using var reader = selectCommand.ExecuteReader();
+            while (reader.Read())
+            {
+                result.ChatroomId = (int) reader["cid"];
+                result.Name = (string) reader["name"];
+                result.Name = (string) reader["image"];
+                result.Code = (string) reader["code"];
+                result.Pass = (string) reader["pass"];
+                result.LastActive = (DateTime) reader["lastActive"];
+            }
+            connection.Close();
+  
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw new Exception("Something went wrong");
+        }
+
+        return result;
+    }
+
+    public bool UpdateChatroom(int userId, int chatroomId, string name, string image, string pass)
+    {
+        throw new NotImplementedException();
+    }
+
     public bool DeleteChatroom(int userId, int chatroomId)
     {
         var status = new Int64();
