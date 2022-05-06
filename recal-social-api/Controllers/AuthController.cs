@@ -73,8 +73,11 @@ public class AuthController : Controller
         var cookieOptions = new CookieOptions()
         {
             Expires = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays),
-            Domain = "social.recalstudios.net",
-            Path = "/",
+            //Domain = "social.recalstudios.net",
+            //SameSite = SameSiteMode.None,
+            //Path = "/",
+            //HttpOnly = false,
+            //Secure = false
             HttpOnly = true,
             Secure = true
         };

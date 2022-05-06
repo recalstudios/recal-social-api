@@ -291,6 +291,9 @@ public class AuthService : IAuthService
 
     public bool UpdateCredentials(int userId, string pass, string newPass)
     {
+        Int64 count = 0;
+        
+        // Updates password in DB
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "update recal_social_database.users set passphrase = @newPass where uid = @userid and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
@@ -298,18 +301,42 @@ public class AuthService : IAuthService
         command.Parameters.AddWithValue("@pass", Hash(pass));
         command.Parameters.AddWithValue("@newPass", Hash(newPass));
 
+        // Gets amount of users matching userid and new password
+        const string selectCommandString = "select count(*) from recal_social_database.users where uid = @uid and passphrase = @newPass";
+        var selectCommand = new MySqlCommand(selectCommandString, connection);
+        selectCommand.Parameters.AddWithValue("@uid", userId);
+        selectCommand.Parameters.AddWithValue("@newPass", Hash(newPass));
         
+        // Tries to update password and count users with new password
         try
         {
+            // Update password in db
             connection.Open();
             command.ExecuteNonQuery();
-            return true;
+            connection.Close();
+            
+            // Gets count
+            connection.Open();
+            using var reader = selectCommand.ExecuteReader();
+            while (reader.Read())
+            {
+                count = (Int64) reader[0];
+                Console.WriteLine(count);
+            }
+            connection.Close();
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             return false;
         }
+        
+        // If count of users matching the new password and uid is not zero, it returns true
+        if (count != 0)
+        {
+            return true;
+        }
+        return false;
     }
 
     public string GetNewAuthToken(string username, string pass)
