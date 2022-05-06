@@ -39,7 +39,7 @@ public class ChatService : IChatService
 
         
         
-        const string selectMessages = "select id, uid, text, timestamp from recal_social_database.messages where uid = @uid and cid = @cid order by timestamp desc limit @start,@end";
+        const string selectMessages = "select id, uid, text, timestamp from recal_social_database.messages where uid = @uid and cid = @cid order by timestamp limit @start,@end";
         var messageCommand = new MySqlCommand(selectMessages, connection);
         messageCommand.Parameters.AddWithValue("@cid", chatroomId);
         messageCommand.Parameters.AddWithValue("@uid", userId);
@@ -53,15 +53,15 @@ public class ChatService : IChatService
         {
             messages.Add(new Message()
             {
-                id = (int) messageReader["id"],
-                type = "message",
-                room = chatroomId,
-                author = (int) messageReader["uid"],
-                content = new MessageContent()
+                Id = (int) messageReader["id"],
+                Type = "message",
+                Room = chatroomId,
+                Author = (int) messageReader["uid"],
+                Content = new MessageContent()
                 {
                     Text = (string) messageReader["text"]
                 },
-                timestamp = (DateTime) messageReader["timestamp"]
+                Timestamp = (DateTime) messageReader["timestamp"]
             });
         }
         connection.Close();
@@ -73,41 +73,87 @@ public class ChatService : IChatService
     }
 
     
-    public int SaveChatMessage(int userId, int chatId, MessageContent content)
+    public Message SaveChatMessage(int userId, int chatId, MessageContent content)
     {
-        var id = 0;
+        var message = new Message();
+        var attachments = new List<MessageAttachement>();
+        
+        
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
        
-        
-        const string selectMessages = "insert into recal_social_database.messages (uid, text, cid) values (@uid, @text, @cid)";
-        var messageCommand = new MySqlCommand(selectMessages, connection);
+        // Insert the message
+        const string insertMessage = "insert into recal_social_database.messages (uid, text, cid) values (@uid, @text, @cid)";
+        var messageCommand = new MySqlCommand(insertMessage, connection);
         messageCommand.Parameters.AddWithValue("@uid", userId);
         messageCommand.Parameters.AddWithValue("@text", content.Text);
         messageCommand.Parameters.AddWithValue("@cid", chatId);
         
-        const string readMessages = "select id from recal_social_database.messages where uid = @uid and text = @text and cid = @cid";
+        // Read the message
+        const string readMessages = "select * from recal_social_database.messages where messages.id and uid = @uid and text = @text and cid = @cid";
         var readCommand = new MySqlCommand(readMessages, connection);
         readCommand.Parameters.AddWithValue("@uid", userId);
         readCommand.Parameters.AddWithValue("@text", content.Text);
         readCommand.Parameters.AddWithValue("@cid", chatId);
         
+        // Read attachments
+        const string readAttachments = "select * from recal_social_database.attachments where message_id = @mid";
+        var readAttachmentsCommand = new MySqlCommand(readAttachments, connection);
+        readAttachmentsCommand.Parameters.AddWithValue("@mid", message.Id);
         try
         {
             connection.Open();
             messageCommand.ExecuteNonQuery();
+            connection.Close();
+            connection.Open();
             using var reader = readCommand.ExecuteReader();
             while (reader.Read())
             {
-                id = (int) reader["id"];
+                message.Id = (int) reader["id"];
+                message.Type = "message";
+                message.Room = (int) reader["cid"];
+                message.Author = (int) reader["uid"];
+                message.Content = new MessageContent()
+                {
+                    Text = (string) reader["text"]
+                };
+                message.Timestamp = (DateTime) reader["timestamp"];
+
             }
             connection.Close();
             
-            return id;
+            
+            connection.Open();
+            using var aReader = readCommand.ExecuteReader();
+            try
+            {
+                while (aReader.Read())
+                {
+                    attachments.Add(new MessageAttachement
+                    {
+                        Id = (int) aReader["attachment_id"],
+                        MessageId = (int) reader["message_id"],
+                        Type = (string) aReader["type"],
+                        Src = (string) aReader["src"]
+                    });
+
+                }
+                if (attachments.Count > 0)
+                {
+                    message.Content.Attachments = attachments;
+                }
+            }
+            catch (Exception e)
+            {
+                message.Content.Attachments = null;
+            }
+            connection.Close();
+            
+            return message;
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
-            return 0;
+            return null;
         }
     }
 

@@ -4,11 +4,11 @@ namespace recal_social_api.Models;
 
 public class Message
 {
-    public int id { get; set; }
-    public string type { get; set; } = null!;
-    public int room { get; set; }
-    public int author { get; set; }
+    public int Id { get; set; }
+    public string Type { get; set; } = null!;
+    public int Room { get; set; }
+    public int Author { get; set; }
 
-    public new MessageContent content { get; set; } = null!;
-    public DateTime timestamp { get; set; }
+    public new MessageContent Content { get; set; } = null!;
+    public DateTime Timestamp { get; set; }
 }

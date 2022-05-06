@@ -48,7 +48,7 @@ public class ChatController : Controller
 
     [Authorize]
     [HttpPost("room/message/save")]
-    public int SaveMessage([FromBody] SaveMessageRequest payload)
+    public Message SaveMessage([FromBody] SaveMessageRequest payload)
     {
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
@@ -69,11 +69,11 @@ public class ChatController : Controller
         var roomlists = _userService.GetUserChatrooms(userId);
 
         //  Uses black magic to find out if user is in chatroom
-        if (roomlists.Any(x => x.Id == payload.ChatroomId))
+        if (roomlists.Any(x => x.Id == payload.Room))
         {
-            return _chatService.SaveChatMessage(userId, payload.ChatroomId, payload.Content);
+            return _chatService.SaveChatMessage(userId, payload.Room, payload.Content);
         }
-        return 0;
+        return null;
     }
     
     [Authorize]
