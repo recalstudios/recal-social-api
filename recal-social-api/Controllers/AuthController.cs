@@ -49,43 +49,27 @@ public class AuthController : Controller
     [AllowAnonymous]
     [HttpPost("token/new")]
     // Creates a new AuthToken and a renewtoken
-    public Task<IActionResult> Post([FromBody] VerifyUserRequest payload)
+    public JwtResponse Post([FromBody] VerifyUserRequest payload)
     {
-        var response = new GetJwtTokenResponse();
+        var JwtResponse = new JwtResponse();
         
         var result = _authService.GetNewAuthToken(payload.Username, payload.Password);
         // Returns error if anything goes wrong
             if(result == "BadRequest")
-            { return Task.FromResult<IActionResult>(BadRequest("Bad request")); }
+            { throw new BadHttpRequestException("Bad request"); }
             if (result == "Invalid credentials")
-            { return Task.FromResult<IActionResult>(BadRequest("Invalid credentials")); }
+            { throw new UnauthorizedAccessException("Unauthorized"); }
         
         // Inserts the authtoken into the response
-            response.AuthToken = result;
+            JwtResponse.AuthToken = result;
             var user = _userService.GetUser(payload.Username);
         
         // Inserts the refreshtoken into the response
             var responsetoken = _authService.GenerateRefreshToken(user.Id) ?? throw new InvalidOperationException();
-            response.RefreshToken = responsetoken;
-            
+            JwtResponse.RefreshToken = responsetoken;
         
-
-        var cookieOptions = new CookieOptions()
-        {
-            Expires = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays),
-            //Domain = "social.recalstudios.net",
-            //SameSite = SameSiteMode.None,
-            //Path = "/",
-            //HttpOnly = false,
-            //Secure = false
-            HttpOnly = true,
-            Secure = true
-        };
-
-        HttpContext.Response.Cookies.Append("refreshToken", response.RefreshToken, cookieOptions);
-
-
-        return Task.FromResult<IActionResult>(Ok(response.AuthToken));
+        // Returns authtoken and refreshtoken
+        return JwtResponse;
 
     }
 
@@ -130,55 +114,64 @@ public class AuthController : Controller
 
     [AllowAnonymous]
     [HttpPost("token/renew")]
-    public Task<IActionResult> ChainToken()
+    public JwtResponse ChainToken()
     {
-        Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
+        var result = new JwtResponse();
+        
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
+        
 
-        if (refreshToken == null)
+        
+        // Checks that the token is not null
+        if (authHeader == null)
         {
-            return Task.FromResult<IActionResult>(BadRequest("Token cannot be null"));
+            throw new BadHttpRequestException("Token cannot be null");
         }
-
+        
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
-        var jsonToken = handler.ReadToken(refreshToken);
+        var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
         
-        //  Sets the variable username to the username from the token
+        //  Gets the token and userid from jwt header
         var oldToken = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
         var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
 
+        // Gets info regarding old refreshtoken
         var oldRefreshToken = _authService.GetRefreshToken(oldToken);
         
         // If its expired or revoked, doesnt work
-        if (DateTime.Parse(oldRefreshToken.ExpiresAt) <= DateTime.UtcNow){
-            return Task.FromResult<IActionResult>(BadRequest("Token is expired")); 
+        if (DateTime.Parse(oldRefreshToken.ExpiresAt!) <= DateTime.UtcNow){
+            throw new BadHttpRequestException("Token is expired"); 
         }
-
         if (oldRefreshToken.ManuallyRevoked == 1)
         {
-            return Task.FromResult<IActionResult>(BadRequest("Token is invalid"));
+            throw new BadHttpRequestException("Token is revoked");
         }
         
+        // Gets user from DB
         var user = _userService.GetUserById(Int32.Parse(userId));
         
+        // Creates new refreshtoken
         var newRefreshToken = _authService.NewRefreshToken(oldToken);
 
+        // if no username, returns user fetch error
         if (user.Username != null)
         {
+            // Creates new auth token
             var newAuthToken = _authService.GetAuthToken(user.Username);
-        
-            var cookieOptions = new CookieOptions()
-            {
-                Expires = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays),
-                HttpOnly = true,
-                Secure = true
-            };
 
-            HttpContext.Response.Cookies.Append("refreshToken", newRefreshToken, cookieOptions);
+            // Inputs the auth and refreshtoken into the response
+            result.AuthToken = newAuthToken;
+            result.RefreshToken = newRefreshToken;
         
         
-            return Task.FromResult<IActionResult>(Ok(newAuthToken));
+            return result;
         }
 
         throw new Exception("Something went wrong when fetching user");
