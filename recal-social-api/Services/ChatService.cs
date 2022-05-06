@@ -75,10 +75,11 @@ public class ChatService : IChatService
     
     public Message SaveChatMessage(int userId, int chatId, MessageContent content)
     {
+        // Variable for message and attatchments
         var message = new Message();
         var attachments = new List<MessageAttachement>();
         
-        
+        // Connectionstring
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
        
         // Insert the message
@@ -88,6 +89,12 @@ public class ChatService : IChatService
         messageCommand.Parameters.AddWithValue("@text", content.Text);
         messageCommand.Parameters.AddWithValue("@cid", chatId);
         
+        // Insert current time into last active in the groupchat
+        const string updateChatroom = "update recal_social_database.chatrooms set lastActive = @time where cid = @cid";
+        var updateCommand = new MySqlCommand(updateChatroom, connection);
+        updateCommand.Parameters.AddWithValue("@time", DateTime.Now);
+        updateCommand.Parameters.AddWithValue("@cid", chatId);
+
         // Read the message
         const string readMessages = "select * from recal_social_database.messages where messages.id and uid = @uid and text = @text and cid = @cid";
         var readCommand = new MySqlCommand(readMessages, connection);
@@ -101,9 +108,12 @@ public class ChatService : IChatService
         readAttachmentsCommand.Parameters.AddWithValue("@mid", message.Id);
         try
         {
+            // Inserts the message
             connection.Open();
             messageCommand.ExecuteNonQuery();
             connection.Close();
+            
+            // Gets the message
             connection.Open();
             using var reader = readCommand.ExecuteReader();
             while (reader.Read())
@@ -121,7 +131,7 @@ public class ChatService : IChatService
             }
             connection.Close();
             
-            
+            // Gets all attachments
             connection.Open();
             using var aReader = readCommand.ExecuteReader();
             try
@@ -137,23 +147,32 @@ public class ChatService : IChatService
                     });
 
                 }
+                // If there are more than zero attachments, adds them to the message.content
                 if (attachments.Count > 0)
                 {
                     message.Content.Attachments = attachments;
                 }
             }
+            
+            // Sets attachments to null if no attachments are found
             catch (Exception e)
             {
                 message.Content.Attachments = null;
             }
             connection.Close();
             
+            // Update lastactive
+            connection.Open();
+            updateCommand.ExecuteNonQuery();
+            connection.Close();
+            
             return message;
         }
+        // If anything fails, returns null
         catch (Exception e)
         {
             Console.WriteLine(e);
-            return null;
+            return null!;
         }
     }
 
