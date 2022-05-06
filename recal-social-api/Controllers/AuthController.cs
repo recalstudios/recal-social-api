@@ -181,45 +181,46 @@ public class AuthController : Controller
     
     [Authorize]
     [HttpPost("token/logout")]
-    public Task<IActionResult> Logout()
+    public bool Logout()
     {
-        Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
 
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
-        var jsonToken = handler.ReadToken(refreshToken);
+        var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
         
-        //  
+        //  Gets token from 
         var token = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
-        var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
 
-        var cookieRefreshToken = _authService.GetRefreshToken(token);
+        // Gets info on old token
+        var oldRefreshToken = _authService.GetRefreshToken(token);
         
         // If its expired or revoked, doesnt work
-        if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow){
-            return Task.FromResult<IActionResult>(BadRequest("Token is expired")); 
+        if (DateTime.Parse(oldRefreshToken.ExpiresAt!) <= DateTime.UtcNow){
+            throw new BadHttpRequestException("Token is expired"); 
         }
-
-        if (cookieRefreshToken.ManuallyRevoked == 1)
+        if (oldRefreshToken.ManuallyRevoked == 1)
         {
-            return Task.FromResult<IActionResult>(BadRequest("Token is invalid"));
+            throw new UnauthorizedAccessException("Token is invalid");
         }
 
-
+        // Logout function in service
         var logout = _authService.LogOut(token);
 
+        // Returns true if successfully logged out
         if (logout == "Success")
         {
-            return Task.FromResult<IActionResult>(Ok("Logged Out"));
-        }
-
-        if (logout == "Failed!")
-        {
-            return Task.FromResult<IActionResult>(BadRequest("An error occurred when logging out token"));
+            return true;
         }
         
-        return Task.FromResult<IActionResult>(BadRequest("An unknown error has occurred"));
+        // If anything fails, returns false
+        return false;
     }
     
     
@@ -227,11 +228,16 @@ public class AuthController : Controller
     [HttpPost("token/logout/all")]
     public Task<IActionResult> LogoutAll()
     {
-        Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
+        //  Gets the http request headers
+        HttpContext httpContext = HttpContext;
+        string authHeader = httpContext.Request.Headers["Authorization"];
 
+        //  Cuts out the Bearer part of the header
+        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
-        var jsonToken = handler.ReadToken(refreshToken);
+        var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
         
         //  Get claims from the token
