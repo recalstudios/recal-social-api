@@ -228,7 +228,7 @@ public class UserService : IUserService
         var users = new List<UserHasRoomResponse>();
 
         
-        const string selectRooms = "select cid, name,image, code, pass, lastActive from recal_social_database.chatrooms, recal_social_database.users_chatrooms where chatroom_cid = chatrooms.cid and users_uid = @id";
+        const string selectRooms = "select cid, name,image, code, pass, lastActive from recal_social_database.chatrooms, recal_social_database.users_chatrooms where chatroom_cid = chatrooms.cid and users_uid = @id  order by lastActive DESC";
         var roomCommand = new MySqlCommand(selectRooms, connection);
         roomCommand.Parameters.AddWithValue("@id", userId);
 
