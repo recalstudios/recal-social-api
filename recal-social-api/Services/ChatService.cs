@@ -20,6 +20,7 @@ public class ChatService : IChatService
     
     private static readonly Random Random = new Random();
 
+    // Creates a random string of x length
     private static string RandomString(int length)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -28,17 +29,22 @@ public class ChatService : IChatService
     }
     
 // Message part of service
+    
+    // Gets the chatroom messages with the chatroom id, userid, start and length
     public GetChatroomMessagesResponse GetChatroomMessages(int chatroomId, int userId, int start, int lenght)
     {
+        // Creates a response and a list of messages for it to be populated with
         var response = new GetChatroomMessagesResponse();
         var messages = new List<Message>();
+        
+        // Creates end which is the start plus lenght
         int end = start + lenght;
 
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
 
         
-        
+        // Selects all the messages from based on the criteria
         const string selectMessages = "select id, uid, text, timestamp from recal_social_database.messages where cid = @cid order by timestamp desc limit @start,@end";
         var messageCommand = new MySqlCommand(selectMessages, connection);
         messageCommand.Parameters.AddWithValue("@cid", chatroomId);
@@ -46,36 +52,47 @@ public class ChatService : IChatService
         messageCommand.Parameters.AddWithValue("@start", start);
         messageCommand.Parameters.AddWithValue("@end", end);
 
-
-        connection.Open();
-        using var messageReader = messageCommand.ExecuteReader();
-        while (messageReader.Read())
+        
+        try
         {
-            messages.Add(new Message()
+            // Gets a list of messages
+            connection.Open();
+            using var messageReader = messageCommand.ExecuteReader();
+            while (messageReader.Read())
             {
-                Id = (int) messageReader["id"],
-                Type = "message",
-                Room = chatroomId,
-                Author = (int) messageReader["uid"],
-                Content = new MessageContent()
+                messages.Add(new Message()
                 {
-                    Text = (string) messageReader["text"]
-                },
-                Timestamp = (DateTime) messageReader["timestamp"]
-            });
+                    Id = (int) messageReader["id"],
+                    Type = "message",
+                    Room = chatroomId,
+                    Author = (int) messageReader["uid"],
+                    Content = new MessageContent()
+                    {
+                        Text = (string) messageReader["text"]
+                    },
+                    Timestamp = (DateTime) messageReader["timestamp"]
+                });
+            }
+            connection.Close();
         }
-        connection.Close();
-
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        
+        // Sets the room id into the response and the list of messages into the response
         response.RoomId = chatroomId;
         response.Messages = messages;
-
+        
         return response;
     }
 
     
+    // Saves a message to a chatroom
     public Message SaveChatMessage(int userId, int chatId, MessageContent content)
     {
-        // Variable for message and attatchments
+        // Variable for message and attachments
         var message = new Message();
         var attachments = new List<MessageAttachement>();
         
@@ -161,7 +178,7 @@ public class ChatService : IChatService
             }
             connection.Close();
             
-            // Update lastactive
+            // Update last active
             connection.Open();
             updateCommand.ExecuteNonQuery();
             connection.Close();
@@ -176,27 +193,35 @@ public class ChatService : IChatService
         }
     }
 
+    
+    // Deletes a message with the message id and userid
     public bool DeleteChatMessage(int messageId, int userId)
     {
+        // Sets the amount of matching messages to 0
         Int64 count = 0;
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
        
-        
+        // Deletes the messages
         const string deleteMessages = "delete from recal_social_database.messages where id = @mid and uid = @uid";
         var messageCommand = new MySqlCommand(deleteMessages, connection);
         messageCommand.Parameters.AddWithValue("@mid", messageId);
         messageCommand.Parameters.AddWithValue("@uid", userId);
         
-        
-        
+        // Counts messages 
         const string readMessages = "select count(*) from recal_social_database.messages where id = @mid and uid = @uid";
         var readCommand = new MySqlCommand(readMessages, connection);
         readCommand.Parameters.AddWithValue("@mid", messageId);
         readCommand.Parameters.AddWithValue("@uid", userId);
+        
         try
         {
+            // Delete the message
             connection.Open();
             messageCommand.ExecuteNonQuery();
+            connection.Close();
+            
+            // Count the messages matching
+            connection.Open();
             using var reader = readCommand.ExecuteReader();
             while (reader.Read())
             {
@@ -204,12 +229,8 @@ public class ChatService : IChatService
             }
             connection.Close();
 
-            if (count == 0)
-            {
-                return true;
-            }
-
-            return false;
+            // If the count is zero, it worked
+            return count == 0;
         }
         catch (Exception e)
         {
@@ -219,6 +240,8 @@ public class ChatService : IChatService
     }
     
 // Room part of service
+
+    // Create chatroom with a name, password and userid
     public bool CreateChatroom(string name, string pass, int userId)
     {
         // Generate room code
@@ -244,9 +267,12 @@ public class ChatService : IChatService
         // Runs creation and fetching
         try
         {
+            // Insert command
             connection.Open();
             command.ExecuteNonQuery();
             connection.Close();
+            
+            // Get the chatroom id
             connection.Open();
             using var reader = selectCommand.ExecuteReader();
             while (reader.Read())
@@ -254,7 +280,6 @@ public class ChatService : IChatService
                 cid = (int) reader["cid"];
             }
             connection.Close();
-  
         }
         catch (Exception e)
         {
@@ -272,6 +297,7 @@ public class ChatService : IChatService
         // Adds user to chatroom with previously obtained data
         try
         {
+            // Insert user into group
             connection.Open();
             joinCommand.ExecuteNonQuery();
             connection.Close();
@@ -284,9 +310,13 @@ public class ChatService : IChatService
         }
     }
 
+    // Gets the details about the chatroom
     public Chatroom DetailsChatroom(int userId, int chatroomId)
     {
+        // Creates the result
         var result = new Chatroom();
+        
+        
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         
         // Get the chatroom id
@@ -296,9 +326,10 @@ public class ChatService : IChatService
         selectCommand.Parameters.AddWithValue("@cid", chatroomId);
 
         
-        // Runs creation and fetching
+        
         try
         {
+            // Runs creation and fetching
             connection.Open();
             using var reader = selectCommand.ExecuteReader();
             while (reader.Read())
@@ -322,20 +353,25 @@ public class ChatService : IChatService
         return result;
     }
 
+    // Updates the chatroom name, image or password
     public bool UpdateChatroom(int userId, int chatroomId, string? payloadName, string? payloadImage, string? payloadPass)
     {
+        // Gets the chatroom information
         var chatroom = DetailsChatroom(userId, chatroomId);
 
+        // If the name is null or empty, break
         if (string.IsNullOrEmpty(chatroom.Name))
         {
             return false;
         }
         
+        // Sets the variables to chatroom name if not otherwise defined
         payloadName ??= chatroom.Name;
         payloadImage ??= chatroom.Image;
         payloadPass ??= chatroom.Code;
 
         
+        // Runs the update command
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "update recal_social_database.chatrooms set name = @name, image = @image, pass = @pass where cid = @cid";
         var command = new MySqlCommand(commandString, connection);
@@ -347,6 +383,7 @@ public class ChatService : IChatService
 
         try
         {
+            // Tries to run
             connection.Open();
             command.ExecuteNonQuery();
             connection.Close();
@@ -359,8 +396,10 @@ public class ChatService : IChatService
         }
     }
 
+    // Deletes the chatroom with user id and chatroom id
     public bool DeleteChatroom(int userId, int chatroomId)
     {
+        // Store if the user is a part of the chatroom
         var status = new Int64();
         
         // Creates the connection
@@ -390,7 +429,7 @@ public class ChatService : IChatService
             return false;
         }
 
-        // If no user with chatroom and userid combo, returns false
+        // If no entry with chatroom and userid combo, returns false
         if (status == 0)
         {
             return false;
@@ -410,9 +449,12 @@ public class ChatService : IChatService
         // Runs deletion of entry
         try
         {
+            // Removes messages
             connection.Open();
             removeMessagesCommand.ExecuteNonQuery();
             connection.Close();
+            
+            // Removes users
             connection.Open();
             removeUserCommand.ExecuteNonQuery();
             connection.Close();
@@ -425,8 +467,10 @@ public class ChatService : IChatService
         }
     }
 
+    // Lets user join chatroom with code, pass and user id
     public bool JoinChatroom(string code, string pass, int userId)
     {
+        // Creates variable where chatroom id is stored
         var cid = new int?();
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
@@ -441,6 +485,7 @@ public class ChatService : IChatService
         // Runs fetching
         try
         {
+            // Gets the chatroom id
             connection.Open();
             using var reader = selectCommand.ExecuteReader();
             while (reader.Read())
@@ -456,6 +501,7 @@ public class ChatService : IChatService
             return false;
         }
 
+        // Checks if chatroom id is null or empty
         if (string.IsNullOrEmpty(cid.ToString()))
         {
             return false;
@@ -467,9 +513,10 @@ public class ChatService : IChatService
         joinCommand.Parameters.AddWithValue("@uid", userId);
         joinCommand.Parameters.AddWithValue("@cid", cid);
 
-        // Adds user to chatroom with previously obtained data
+        
         try
         {
+            // Adds user to chatroom with previously obtained data
             connection.Open();
             joinCommand.ExecuteNonQuery();
             connection.Close();
@@ -482,8 +529,10 @@ public class ChatService : IChatService
         }
     }
 
+    // Lets user leave chatroom with user id and chatroom id
     public bool LeaveChatroom(int userId, int chatroomId)
     {
+        // Creates variable for storing if the user is in the chatroom and selecting remaining users
         var status = new Int64();
         var users = new Int64();
         
@@ -523,12 +572,11 @@ public class ChatService : IChatService
         // Count users remaining
         const string selectUserCountCommandString = "select count(*) from recal_social_database.users_chatrooms where chatroom_cid = @cid";
         var selectUserCountCommand = new MySqlCommand(selectUserCountCommandString, connection);
-        selectUserCountCommand.Parameters.AddWithValue("@uid", userId);
         selectUserCountCommand.Parameters.AddWithValue("@cid", chatroomId);
 
-        // Runs selection of user
         try
         {
+            // Runs selection of user
             connection.Open();
             using var reader = selectCommand.ExecuteReader();
             while (reader.Read())
@@ -544,29 +592,27 @@ public class ChatService : IChatService
             return false;
         }
 
-        if (users <= 1)
-        {
-            return DeleteChatroom(userId, chatroomId);
-        }
-
         // Get if the user is in chatroom
         const string removeCommandString = "delete from recal_social_database.users_chatrooms where users_uid = @uid and chatroom_cid = @cid";
         var removeCommand = new MySqlCommand(removeCommandString, connection);
         removeCommand.Parameters.AddWithValue("@uid", userId);
         removeCommand.Parameters.AddWithValue("@cid", chatroomId);
         
-        // Runs deletion of entry
+        
         try
         {
+            // Runs deletion of entry
             connection.Open();
             removeCommand.ExecuteNonQuery();
             connection.Close();
-            return true;
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             return false;
         }
+        
+        // If there are no users left in the chatroom, deletes the chatroom
+        return users <= 1 && DeleteChatroom(userId, chatroomId);
     }
 }

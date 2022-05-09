@@ -27,6 +27,7 @@ public class AuthController : Controller
 
     [Authorize]
     [HttpPost("update/pass")]
+    // Updating the password using authtoken, old password and new password
     public bool UpdateCredentials([FromBody] UpdateCredentialsRequest payload)
     {
         //  Gets the http request headers
@@ -44,6 +45,7 @@ public class AuthController : Controller
         //  Sets the variable userid to the userid from the token
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
         
+        // Runs update credentials
         return _authService.UpdateCredentials(int.Parse(userId), payload.Pass, payload.NewPass);
     }
     
@@ -52,8 +54,10 @@ public class AuthController : Controller
     // Creates a new AuthToken and a renewtoken
     public IActionResult Post([FromBody] VerifyUserRequest payload)
     {
+        // Creates a response that contains both auth and refresh token
         var jwtResponse = new JwtResponse();
         
+        // Inputs the username and password into a function
         var result = _authService.GetNewAuthToken(payload.Username, payload.Password);
         // Returns error if anything goes wrong
             if(result == "BadRequest")
@@ -76,6 +80,7 @@ public class AuthController : Controller
 
     [AllowAnonymous]
     [HttpPost("token/test")]
+    // Check the expiration of auth tokens
     public bool CheckExpiration()
     {
         //  Gets the http request headers
@@ -90,13 +95,14 @@ public class AuthController : Controller
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
         
-        //  Gets expirations form token and current time
+        //  Gets expirations from token and current time
         var expiration = double.Parse(tokenS!.Claims.First(claim => claim.Type == "exp").Value);
         
         // Converts to datetime
         DateTime expirationDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         expirationDate = expirationDate.AddSeconds(expiration).ToLocalTime();
 
+        // Sets now to Datetime Now
         var now = DateTime.Now;
         
         
@@ -109,26 +115,21 @@ public class AuthController : Controller
         {
             return true;
         }
-
         return false;
     }
 
     [AllowAnonymous]
     [HttpPost("token/renew")]
+    // Renews the tokens using a renewtoken
     public IActionResult ChainToken()
     {
+        // Creates a response with an auth and renewtoken
         var result = new JwtResponse();
         
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
-        // Checks that the token is not null
-        if (authHeader == null)
-        {
-            return BadRequest(HttpStatusCode.BadRequest);
-        }
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
         
@@ -140,8 +141,8 @@ public class AuthController : Controller
         //  Gets the token and userid from jwt header
         var oldToken = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
         var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
-
-       
+        
+        
         
         // Gets info regarding old refreshtoken
         var oldRefreshToken = _authService.GetRefreshToken(oldToken);
@@ -149,19 +150,15 @@ public class AuthController : Controller
         // Gets user information
         var userdata = _userService.GetUserById(int.Parse(userId));
 
-        // Does not work if it is not active, expired or revoked
-        if (userdata.Active != 1)
+        // Does not work if it is not active, revoked or expired
+        if (userdata.Active != 1 | oldRefreshToken.ManuallyRevoked == 1)
         {
             return Unauthorized(HttpStatusCode.Unauthorized);
         }
         if (DateTime.Parse(oldRefreshToken.ExpiresAt!) <= DateTime.UtcNow){
             return BadRequest(HttpStatusCode.BadRequest); 
         }
-        if (oldRefreshToken.ManuallyRevoked == 1)
-        {
-            return Unauthorized(HttpStatusCode.Unauthorized);
-        }
-        
+
         // Gets user from DB
         var user = _userService.GetUserById(Int32.Parse(userId));
         
@@ -177,8 +174,8 @@ public class AuthController : Controller
             // Inputs the auth and refreshtoken into the response
             result.AuthToken = newAuthToken;
             result.RefreshToken = newRefreshToken;
-        
-        
+
+            // Returns the tokens
             return Ok(result);
         }
 
@@ -189,6 +186,7 @@ public class AuthController : Controller
     
     [Authorize]
     [HttpPost("token/logout")]
+    // Logout the currently used refreshtoken
     public IActionResult Logout()
     {
         //  Gets the http request headers
@@ -210,12 +208,8 @@ public class AuthController : Controller
         var oldRefreshToken = _authService.GetRefreshToken(token);
         
         // If its expired or revoked, doesnt work
-        if (DateTime.Parse(oldRefreshToken.ExpiresAt!) <= DateTime.UtcNow){
+        if (DateTime.Parse(oldRefreshToken.ExpiresAt!) <= DateTime.UtcNow | oldRefreshToken.ManuallyRevoked == 1){
             return Unauthorized(HttpStatusCode.Unauthorized); 
-        }
-        if (oldRefreshToken.ManuallyRevoked == 1)
-        {
-            return Unauthorized(HttpStatusCode.Unauthorized);
         }
 
         // Logout function in service
@@ -234,6 +228,7 @@ public class AuthController : Controller
     
     [Authorize]
     [HttpPost("token/logout/all")]
+    // Log out all refreshtokens associated with a user
     public Task<IActionResult> LogoutAll()
     {
         //  Gets the http request headers
@@ -255,29 +250,19 @@ public class AuthController : Controller
         var cookieRefreshToken = _authService.GetRefreshToken(token);
         
             // If its expired or revoked, doesnt work
-            if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow){
-                return Task.FromResult<IActionResult>(BadRequest("Token is expired")); 
+            if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow | cookieRefreshToken.ManuallyRevoked == 1){
+                return Task.FromResult<IActionResult>(Unauthorized("Token is expired")); 
             }
 
-            if (cookieRefreshToken.ManuallyRevoked == 1)
-            {
-                return Task.FromResult<IActionResult>(BadRequest("Token is invalid"));
-            }
-
-
+            // Logout
             var logout = _authService.LogOutAll(userId);
 
-            if (logout == "Success")
+            // Returns ok if successful, otherwise returns bad request
+            return logout switch
             {
-                return Task.FromResult<IActionResult>(Ok("Logged Out"));
-            }
-
-            if (logout == "Failed!")
-            {
-                return Task.FromResult<IActionResult>(BadRequest("An error occurred when logging out token"));
-            }
-        
-        return Task.FromResult<IActionResult>(BadRequest("An unknown error has occurred"));
+                "Success" => Task.FromResult<IActionResult>(Ok("Logged Out")),
+                _ => Task.FromResult<IActionResult>(BadRequest("An unknown error has occurred"))
+            };
     }
     
     

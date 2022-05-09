@@ -29,6 +29,7 @@ public class AuthService : IAuthService
         _userService = userService;
     }
 
+    // Used by hash
     private static string ByteArrayToString(byte[] arrInput)
     {
         int i;
@@ -36,7 +37,8 @@ public class AuthService : IAuthService
         for (i = 0; i < arrInput.Length; i++) sOutput.Append(arrInput[i].ToString("X2"));
         return sOutput.ToString();
     }
-
+    
+    // Hashes inputted string
     private static string Hash(string pass)
     {
         var passBytes = Encoding.UTF8.GetBytes(pass);
@@ -44,7 +46,8 @@ public class AuthService : IAuthService
         return ByteArrayToString(passHash);
     }
 
-    //  Generate fresh refreshtoken that gets sent to database
+    
+    //  Generate fresh refreshtoken and inserts into database
     public string GenerateRefreshToken(int userId)
     {
 
@@ -73,6 +76,7 @@ public class AuthService : IAuthService
             command.Parameters.AddWithValue("@userid", refToken.UserId);
 
 
+        // Tries to insert and catches if not
             try
             {
                 connection.Open();
@@ -85,7 +89,7 @@ public class AuthService : IAuthService
             }
 
             
-        //create claims
+        // Create claims
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, "JWTRefreshToken"),
@@ -115,6 +119,7 @@ public class AuthService : IAuthService
     //  Get refresh token from DB
     public GetRefreshTokenResponse GetRefreshToken(string token)
     {
+        // Create a response containing all the info for the refreshtoken
         var refreshToken = new GetRefreshTokenResponse();
 
         // Get from the DB
@@ -148,6 +153,7 @@ public class AuthService : IAuthService
     // Update the refreshtoken in the DB
     public bool UpdateRefreshTokenChain(int tokenId, int oldTokenId)
     {
+        // Error storing variable
         var errors = 0;
         
         // Update old token
@@ -164,11 +170,14 @@ public class AuthService : IAuthService
         command2.Parameters.AddWithValue("@tokenId", tokenId);
         command2.Parameters.AddWithValue("@oldTokenId", oldTokenId);
         
+        // Try to execute
         try
         {
+            // Update old token
             connection.Open();
             command.ExecuteNonQuery();
             connection.Close();
+            // Update new token
             connection.Open();
             command2.ExecuteNonQuery();
             connection.Close();
@@ -179,17 +188,14 @@ public class AuthService : IAuthService
             errors++;
         }
 
-        if(errors == 0)
-        {
-            return true;
-        }
-
-        return false;
+        // If no errors, returns true
+        return errors == 0;
     }
     
     // Creates another refreshtoken in the chain
     public string NewRefreshToken(string oldToken)
     {
+        // Gets the old refreshtoken
         var oldRefreshToken = GetRefreshToken(oldToken);
         
         //Initialise the object that is going to be made and sent
@@ -205,11 +211,9 @@ public class AuthService : IAuthService
             refToken.Created = DateTime.UtcNow;
             refToken.ExpiresAt = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays);
             refToken.UserId = oldRefreshToken.UserId;
-            
-            
 
 
-        // Insert into the DB
+            // Insert into the DB
             using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
             const string commandString = "insert into recal_social_database.refreshtoken (token, created, expiresAt, userId) value (@token, @created, @expiresat, @userid)";
             var command = new MySqlCommand(commandString, connection);
@@ -221,6 +225,7 @@ public class AuthService : IAuthService
 
             try
             {
+                // Inserts the new token into the DB
                 connection.Open();
                 command.ExecuteNonQuery();
                 connection.Close();
@@ -230,8 +235,10 @@ public class AuthService : IAuthService
                 Console.WriteLine(e);
             }
 
+            // Gets the new token from the DB
             var newRefreshToken = GetRefreshToken(refToken.Token);
 
+            // Chains the old and new tokens
             UpdateRefreshTokenChain(newRefreshToken.RefreshTokenId, oldRefreshToken.RefreshTokenId);
             
         //create claims
@@ -264,37 +271,45 @@ public class AuthService : IAuthService
     // Verify if user exists in DB with username and pass
     public User GetUserInfo(string username, string pass)
     {
-        
+        // Get the user based on username and pass
         var userdata = new User();
         
         // Connect to DB and get user
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "select * from recal_social_database.users where username = @user and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
-
         command.Parameters.AddWithValue("@user", username);
         command.Parameters.AddWithValue("@pass", Hash(pass));
 
-
-        connection.Open();
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        try
         {
-            // ID in the User table
-            userdata.Id = (int) reader["uid"];
-            userdata.Username = (string) reader["username"];
-            userdata.Password = (string) reader["passphrase"];
-            userdata.Email = (string) reader["email"];
-            userdata.Pfp = (string) reader["pfp"];
-            userdata.Active = (int) reader["active"];
+            // Reads the user
+            connection.Open();
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                // ID in the User table
+                userdata.Id = (int) reader["uid"];
+                userdata.Username = (string) reader["username"];
+                userdata.Password = (string) reader["passphrase"];
+                userdata.Email = (string) reader["email"];
+                userdata.Pfp = (string) reader["pfp"];
+                userdata.Active = (int) reader["active"];
+            }
+            connection.Close();
         }
-
-        connection.Close();
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
         return userdata;
     }
 
+    // Update the password using using userid, old password and new password
     public bool UpdateCredentials(int userId, string pass, string newPass)
     {
+        // Stores the users matching new password and userid
         Int64 count = 0;
         
         // Updates password in DB
@@ -325,7 +340,6 @@ public class AuthService : IAuthService
             while (reader.Read())
             {
                 count = (Int64) reader[0];
-                Console.WriteLine(count);
             }
             connection.Close();
         }
@@ -336,99 +350,76 @@ public class AuthService : IAuthService
         }
         
         // If count of users matching the new password and uid is not zero, it returns true
-        if (count != 0)
-        {
-            return true;
-        }
-        return false;
+        return count != 0;
     }
 
+    // Creates the token if user is active
     public string GetNewAuthToken(string username, string pass)
     {
-        //  If username isn't empty, starts creating JWT token
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-        if (username != null)
+        // Gets the user from the DB
+        var user = GetUserInfo(username, pass);
+        
+        //  If returning Username and user.active successfully, create JWT. Else fails
+        if (user.Username != null && user.Active == 1)
         {
-            // Gets the user from the DB
-            var user = GetUserInfo(username, pass);
-            
-                //  If returning Username successfully, create JWT. Else fails
-            if (user.Username != null && user.Active == 1)
-            {
-                //create claims details based on the user information
-                var claims = new[] {
-                    new Claim(JwtRegisteredClaimNames.Sub, _configuration["Jwt:Subject"]),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.CurrentCulture)),
-                    new Claim("UserId", user.Id.ToString()),
-                    new Claim("Username", user.Username!),
-                };
+            //create claims details based on the user information
+            var claims = new[] {
+                new Claim(JwtRegisteredClaimNames.Sub, _configuration["Jwt:Subject"]),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.CurrentCulture)),
+                new Claim("UserId", user.Id.ToString()),
+                new Claim("Username", user.Username!),
+            };
 
-                // Creates the JWT token and includes the claims
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-                var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                var token = new JwtSecurityToken(
-                    _configuration["Jwt:Issuer"],
-                    _configuration["Jwt:Audience"],
-                    claims,
-                    expires: DateTime.UtcNow.AddMinutes(7200),
-                    signingCredentials: signIn);
+            // Creates the JWT token and includes the claims
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var token = new JwtSecurityToken(
+                _configuration["Jwt:Issuer"],
+                _configuration["Jwt:Audience"],
+                claims,
+                expires: DateTime.UtcNow.AddMinutes(7200),
+                signingCredentials: signIn);
 
-                return new JwtSecurityTokenHandler().WriteToken(token).ToString();
-            }
-            else
-            {
-                return "Unauthorized";
-            }
+            return new JwtSecurityTokenHandler().WriteToken(token).ToString();
         }
-        else
-        {
-            return "Bad request";
-        }
+        return "Unauthorized";
     }
+    
+    // Creates authtoken
     public string GetAuthToken(string username)
     {
         //  If username isn't empty, starts creating JWT token
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-        if (username != null)
-        {
-            var user = _userService.GetUser(username);
+        var user = _userService.GetUser(username);
             
-            //  If returning Username successfully, create JWT. Else fails
-            if (user.Username != null)
-            {
-                //create claims details based on the user information
-                var claims = new[] {
-                    new Claim(JwtRegisteredClaimNames.Sub, _configuration["Jwt:Subject"]),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.CurrentCulture)),
-                    new Claim("UserId", user.Id.ToString()),
-                    new Claim("Username", user.Username),
-                };
-
-                // Creates the JWT token and includes the claims
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-                var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                var token = new JwtSecurityToken(
-                    _configuration["Jwt:Issuer"],
-                    _configuration["Jwt:Audience"],
-                    claims,
-                    expires: DateTime.UtcNow.AddMinutes(GlobalVars.AuthTokenAgeMinutes),
-                    signingCredentials: signIn);
-
-                return new JwtSecurityTokenHandler().WriteToken(token);
-            }
-            else
-            {
-                return "Invalid credentials";
-            }
-        }
-        else
+        //  If returning Username successfully, create JWT. Else fails
+        if (user.Username != null)
         {
-            return "Bad request";
+            //create claims details based on the user information
+            var claims = new[] {
+                new Claim(JwtRegisteredClaimNames.Sub, _configuration["Jwt:Subject"]),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.CurrentCulture)),
+                new Claim("UserId", user.Id.ToString()),
+                new Claim("Username", user.Username),
+            };
+
+            // Creates the JWT token and includes the claims
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var token = new JwtSecurityToken(
+                _configuration["Jwt:Issuer"],
+                _configuration["Jwt:Audience"],
+                claims,
+                expires: DateTime.UtcNow.AddMinutes(GlobalVars.AuthTokenAgeMinutes),
+                signingCredentials: signIn);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
+        return "Invalid credentials";
     }
 
+    // Log out one refreshtoken using the token inside
     public string LogOut(string token)
     {
         // Insert into the DB
@@ -453,6 +444,7 @@ public class AuthService : IAuthService
         }
     }
 
+    // Logs out all tokens belonging to a user
     public string LogOutAll(string userId)
     {
         // Insert into the DB
@@ -463,7 +455,7 @@ public class AuthService : IAuthService
         command.Parameters.AddWithValue("@revdate", DateTime.UtcNow);
         command.Parameters.AddWithValue("@expiresat", DateTime.UtcNow.AddDays(GlobalVars.RefreshTokenAgeDays));
 
-
+        // Tries to do
         try
         {
             connection.Open();
