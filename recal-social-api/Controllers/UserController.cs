@@ -15,10 +15,12 @@ namespace recal_social_api.Controllers;
 public class UserController : Controller
 {
     private readonly IUserService _userService;
+    private readonly IAuthService _authService;
 
-    public UserController(IUserService userService)
+    public UserController(IUserService userService, IAuthService authService)
     {
         _userService = userService;
+        _authService = _authService;
     }
 
     [Authorize]
@@ -82,7 +84,14 @@ public class UserController : Controller
         
         //  Sets the variable username to the username from the token
         var username = tokenS.Claims.First(claim => claim.Type == "Username").Value;
-        return _userService.DeleteUser(username);
+        var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
+        _userService.DeleteUser(username);
+
+        // Logs out all refreshtokens
+        var logout = _authService.LogOutAll(userId);
+        
+        // Returns true if logged out
+        return logout == "Success";
     }
 
     [Authorize]

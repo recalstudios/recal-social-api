@@ -8,4 +8,5 @@ public class User
     public string? Email { get; set;} = null!;
     public string? Pfp { get; set;} = null!;
     public int AccessLevel { get; set; }
+    public int Active { get; set; }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
@@ -11,7 +12,7 @@ namespace recal_social_api.Controllers;
 
 
 [ApiController]
-[Route("auth")]
+[Microsoft.AspNetCore.Mvc.Route("auth")]
 
 public class AuthController : Controller
 {
@@ -49,27 +50,27 @@ public class AuthController : Controller
     [AllowAnonymous]
     [HttpPost("token/new")]
     // Creates a new AuthToken and a renewtoken
-    public JwtResponse Post([FromBody] VerifyUserRequest payload)
+    public IActionResult Post([FromBody] VerifyUserRequest payload)
     {
-        var JwtResponse = new JwtResponse();
+        var jwtResponse = new JwtResponse();
         
         var result = _authService.GetNewAuthToken(payload.Username, payload.Password);
         // Returns error if anything goes wrong
             if(result == "BadRequest")
-            { throw new BadHttpRequestException("Bad request"); }
-            if (result == "Invalid credentials")
-            { throw new UnauthorizedAccessException("Unauthorized"); }
+            { return BadRequest(HttpStatusCode.BadRequest); }
+            if (result == "Unauthorized")
+            { return Unauthorized(HttpStatusCode.Unauthorized); }
         
         // Inserts the authtoken into the response
-            JwtResponse.AuthToken = result;
+            jwtResponse.AuthToken = result;
             var user = _userService.GetUser(payload.Username);
         
         // Inserts the refreshtoken into the response
             var responsetoken = _authService.GenerateRefreshToken(user.Id) ?? throw new InvalidOperationException();
-            JwtResponse.RefreshToken = responsetoken;
+            jwtResponse.RefreshToken = responsetoken;
         
         // Returns authtoken and refreshtoken
-        return JwtResponse;
+        return Ok(jwtResponse);
 
     }
 
@@ -114,7 +115,7 @@ public class AuthController : Controller
 
     [AllowAnonymous]
     [HttpPost("token/renew")]
-    public JwtResponse ChainToken()
+    public IActionResult ChainToken()
     {
         var result = new JwtResponse();
         
@@ -122,12 +123,10 @@ public class AuthController : Controller
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
         
-
-        
         // Checks that the token is not null
         if (authHeader == null)
         {
-            throw new BadHttpRequestException("Token cannot be null");
+            return BadRequest(HttpStatusCode.BadRequest);
         }
         
         //  Cuts out the Bearer part of the header
@@ -142,16 +141,25 @@ public class AuthController : Controller
         var oldToken = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
         var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
 
+       
+        
         // Gets info regarding old refreshtoken
         var oldRefreshToken = _authService.GetRefreshToken(oldToken);
         
-        // If its expired or revoked, doesnt work
+        // Gets user information
+        var userdata = _userService.GetUserById(int.Parse(userId));
+
+        // Does not work if it is not active, expired or revoked
+        if (userdata.Active != 1)
+        {
+            return Unauthorized(HttpStatusCode.Unauthorized);
+        }
         if (DateTime.Parse(oldRefreshToken.ExpiresAt!) <= DateTime.UtcNow){
-            throw new BadHttpRequestException("Token is expired"); 
+            return BadRequest(HttpStatusCode.BadRequest); 
         }
         if (oldRefreshToken.ManuallyRevoked == 1)
         {
-            throw new BadHttpRequestException("Token is revoked");
+            return Unauthorized(HttpStatusCode.Unauthorized);
         }
         
         // Gets user from DB
@@ -171,7 +179,7 @@ public class AuthController : Controller
             result.RefreshToken = newRefreshToken;
         
         
-            return result;
+            return Ok(result);
         }
 
         throw new Exception("Something went wrong when fetching user");
@@ -181,7 +189,7 @@ public class AuthController : Controller
     
     [Authorize]
     [HttpPost("token/logout")]
-    public bool Logout()
+    public IActionResult Logout()
     {
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
@@ -203,11 +211,11 @@ public class AuthController : Controller
         
         // If its expired or revoked, doesnt work
         if (DateTime.Parse(oldRefreshToken.ExpiresAt!) <= DateTime.UtcNow){
-            throw new BadHttpRequestException("Token is expired"); 
+            return Unauthorized(HttpStatusCode.Unauthorized); 
         }
         if (oldRefreshToken.ManuallyRevoked == 1)
         {
-            throw new UnauthorizedAccessException("Token is invalid");
+            return Unauthorized(HttpStatusCode.Unauthorized);
         }
 
         // Logout function in service
@@ -216,11 +224,11 @@ public class AuthController : Controller
         // Returns true if successfully logged out
         if (logout == "Success")
         {
-            return true;
+            return Ok(true);
         }
         
         // If anything fails, returns false
-        return false;
+        return Ok(false);
     }
     
     

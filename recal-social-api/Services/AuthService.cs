@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -204,6 +205,8 @@ public class AuthService : IAuthService
             refToken.Created = DateTime.UtcNow;
             refToken.ExpiresAt = DateTime.Now.AddDays(GlobalVars.RefreshTokenAgeDays);
             refToken.UserId = oldRefreshToken.UserId;
+            
+            
 
 
         // Insert into the DB
@@ -259,7 +262,7 @@ public class AuthService : IAuthService
     }
 
     // Verify if user exists in DB with username and pass
-    public User VerifyCredentials(string username, string pass)
+    public User GetUserInfo(string username, string pass)
     {
         
         var userdata = new User();
@@ -283,6 +286,7 @@ public class AuthService : IAuthService
             userdata.Password = (string) reader["passphrase"];
             userdata.Email = (string) reader["email"];
             userdata.Pfp = (string) reader["pfp"];
+            userdata.Active = (int) reader["active"];
         }
 
         connection.Close();
@@ -345,10 +349,11 @@ public class AuthService : IAuthService
         // ReSharper disable once ConditionIsAlwaysTrueOrFalse
         if (username != null)
         {
-            var user = VerifyCredentials(username, pass);
+            // Gets the user from the DB
+            var user = GetUserInfo(username, pass);
             
-            //  If returning Username successfully, create JWT. Else fails
-            if (user.Username != null)
+                //  If returning Username successfully, create JWT. Else fails
+            if (user.Username != null && user.Active == 1)
             {
                 //create claims details based on the user information
                 var claims = new[] {
@@ -356,7 +361,7 @@ public class AuthService : IAuthService
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.CurrentCulture)),
                     new Claim("UserId", user.Id.ToString()),
-                    new Claim("Username", user.Username),
+                    new Claim("Username", user.Username!),
                 };
 
                 // Creates the JWT token and includes the claims
@@ -373,7 +378,7 @@ public class AuthService : IAuthService
             }
             else
             {
-                return "Invalid credentials";
+                return "Unauthorized";
             }
         }
         else
@@ -408,7 +413,7 @@ public class AuthService : IAuthService
                     _configuration["Jwt:Issuer"],
                     _configuration["Jwt:Audience"],
                     claims,
-                    expires: DateTime.UtcNow.AddMinutes(10),
+                    expires: DateTime.UtcNow.AddMinutes(GlobalVars.AuthTokenAgeMinutes),
                     signingCredentials: signIn);
 
                 return new JwtSecurityTokenHandler().WriteToken(token);

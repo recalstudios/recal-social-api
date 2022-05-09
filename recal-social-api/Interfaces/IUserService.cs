@@ -6,7 +6,7 @@ namespace recal_social_api.Interfaces;
 public interface IUserService
 {
     public GetUserResponse GetUser(string username);
-    public GetUserResponse GetUserById(int userId);
+    public User GetUserById(int userId);
     public PublicGetUserResponse PublicGetUser(int userId);
     public bool CreateUser(string username, string email, string pass);
     public bool DeleteUser(string username);

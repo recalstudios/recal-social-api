@@ -64,9 +64,9 @@ public class UserService : IUserService
     }
     
     // Gets user based on userId
-    public GetUserResponse GetUserById(int userId)
+    public User GetUserById(int userId)
     {
-        var user = new GetUserResponse();
+        var user = new User();
         
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "select * from recal_social_database.users where uid = @userId";
@@ -87,6 +87,7 @@ public class UserService : IUserService
             user.Password = (string) reader["passphrase"];
             user.Email = (string) reader["email"];
             user.Pfp = (string) reader["pfp"];
+            user.Active = (int) reader["active"];
         }
 
         connection.Close();
@@ -157,15 +158,13 @@ public class UserService : IUserService
     {
         // Changes the user to random information. This is so that user chats still make sense, but user is anonymised
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
-        const string commandString = "update recal_social_database.users set username = @username, passphrase = @pass, email = @email, pfp = 'https://via.placeholder.com/100x100', access_level = '0' where username = @oldUsername";
+        const string commandString = "update recal_social_database.users set username = @username, passphrase = @pass, email = @email, pfp = 'https://via.placeholder.com/100x100', access_level = '0', active = 0 where username = @oldUsername";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@oldUsername", username);
         command.Parameters.AddWithValue("@username", "Deleted user #" + RandomString(16));
         command.Parameters.AddWithValue("@pass", Hash(RandomString(32)));
         command.Parameters.AddWithValue("@email", RandomString(32));
         
-        
-
 
 
         try
@@ -180,6 +179,8 @@ public class UserService : IUserService
             Console.WriteLine(e);
             return false;
         }
+        
+        
 
     }
     
