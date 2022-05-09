@@ -39,7 +39,7 @@ public class ChatService : IChatService
 
         
         
-        const string selectMessages = "select id, uid, text, timestamp from recal_social_database.messages where uid = @uid and cid = @cid order by timestamp limit @start,@end";
+        const string selectMessages = "select id, uid, text, timestamp from recal_social_database.messages where cid = @cid order by timestamp desc limit @start,@end";
         var messageCommand = new MySqlCommand(selectMessages, connection);
         messageCommand.Parameters.AddWithValue("@cid", chatroomId);
         messageCommand.Parameters.AddWithValue("@uid", userId);
