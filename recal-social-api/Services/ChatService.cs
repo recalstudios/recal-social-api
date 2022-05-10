@@ -592,7 +592,13 @@ public class ChatService : IChatService
             return false;
         }
 
-        // Get if the user is in chatroom
+        // If there are no users left in the chatroom, deletes the chatroom
+        if (users <= 1)
+        {
+            return DeleteChatroom(userId, chatroomId);
+        }
+        
+        // Delete the user from the chatroom
         const string removeCommandString = "delete from recal_social_database.users_chatrooms where users_uid = @uid and chatroom_cid = @cid";
         var removeCommand = new MySqlCommand(removeCommandString, connection);
         removeCommand.Parameters.AddWithValue("@uid", userId);
@@ -612,7 +618,6 @@ public class ChatService : IChatService
             return false;
         }
         
-        // If there are no users left in the chatroom, deletes the chatroom
-        return users <= 1 && DeleteChatroom(userId, chatroomId);
+        return true;
     }
 }
