@@ -533,8 +533,8 @@ public class ChatService : IChatService
     public bool LeaveChatroom(int userId, int chatroomId)
     {
         // Creates variable for storing if the user is in the chatroom and selecting remaining users
-        var status = new Int64();
-        var users = new Int64();
+        var isUserInChatroom = new Int64();
+        var usersLeft = new Int64();
         
         // Creates the connection
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
@@ -552,7 +552,7 @@ public class ChatService : IChatService
             using var reader = selectCommand.ExecuteReader();
             while (reader.Read())
             {
-                status = (Int64) reader[0];
+                isUserInChatroom = (long) reader[0];
             }
             connection.Close();
   
@@ -564,7 +564,7 @@ public class ChatService : IChatService
         }
 
         // If no user with chatroom and userid combo, returns false
-        if (status == 0)
+        if (isUserInChatroom == 0)
         {
             return false;
         }
@@ -576,15 +576,14 @@ public class ChatService : IChatService
 
         try
         {
-            // Runs selection of user
+            // Runs counting of users left
             connection.Open();
             using var reader = selectCommand.ExecuteReader();
             while (reader.Read())
             {
-                users = (Int64) reader[0];
+                usersLeft = (long) reader[0];
             }
             connection.Close();
-  
         }
         catch (Exception e)
         {
@@ -592,11 +591,11 @@ public class ChatService : IChatService
             return false;
         }
 
-        // If there are no users left in the chatroom, deletes the chatroom
-        if (users <= 1)
+        // If there are no other users left in the chatroom, deletes the chatroom
+        /*if (usersLeft <= 1)
         {
             return DeleteChatroom(userId, chatroomId);
-        }
+        }*/
         
         // Delete the user from the chatroom
         const string removeCommandString = "delete from recal_social_database.users_chatrooms where users_uid = @uid and chatroom_cid = @cid";
