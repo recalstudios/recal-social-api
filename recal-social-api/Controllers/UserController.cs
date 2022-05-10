@@ -20,7 +20,7 @@ public class UserController : Controller
     public UserController(IUserService userService, IAuthService authService)
     {
         _userService = userService;
-        _authService = _authService;
+        _authService = authService;
     }
 
     [Authorize]

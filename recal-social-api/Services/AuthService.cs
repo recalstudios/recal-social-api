@@ -461,12 +461,12 @@ public class AuthService : IAuthService
             connection.Open();
             command.ExecuteNonQuery();
             connection.Close();
-            return "Success";
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             return "Failed!";
         }
+        return "Success";
     }
 }
