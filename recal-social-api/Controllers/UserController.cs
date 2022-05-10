@@ -25,6 +25,7 @@ public class UserController : Controller
 
     [Authorize]
     [HttpPost("user")]
+    // Get user with the username in jwt token
     public Task<IActionResult> GetUser()
     {
         //  Gets the http request headers
@@ -43,24 +44,22 @@ public class UserController : Controller
         var username = tokenS!.Claims.First(claim => claim.Type == "Username").Value;
         var retUser = _userService.GetUser(username);
 
-        if (string.IsNullOrEmpty(retUser.Username))
-        {
-            return Task.FromResult<IActionResult>(NotFound("Username does not exist"));
-        }
-
-        return Task.FromResult<IActionResult>(Ok(retUser));
-
+        //  Runs the service
+        return string.IsNullOrEmpty(retUser.Username) ? Task.FromResult<IActionResult>(NotFound("Username does not exist")) : Task.FromResult<IActionResult>(Ok(retUser));
     }
     
     [AllowAnonymous]
     [HttpPost("create")]
+    // Create a user using username, email and password
     public bool CreateUser([FromBody] CreateUserRequest payload)
     {
+        // Runs the service
         return _userService.CreateUser(payload.Username, payload.Email, payload.Pass);
     }
 
     [AllowAnonymous]
     [HttpPost("user/public")]
+    // Gets the public part of a user using the userid
     public PublicGetUserResponse PublicGetUser([FromBody]PublicGetUserRequest payload)
     {
         return _userService.PublicGetUser(payload.UserId);
@@ -68,6 +67,7 @@ public class UserController : Controller
 
     [Authorize]
     [HttpDelete("delete")]
+    // Deletes user using userid from auth token
     public bool DeleteUser()
     {
         //  Gets the http request headers
@@ -96,6 +96,7 @@ public class UserController : Controller
 
     [Authorize]
     [HttpPost("update")]
+    // Update the user. User id is from auth token and rest is from request body
     public bool UpdateUser([FromBody] UpdateUserRequest payload)
     {
         //  Gets the http request headers
@@ -113,11 +114,13 @@ public class UserController : Controller
         //  Sets the variable username to the username from the token
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
         
+        // Runs the service
         return _userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Email, payload.Pfp);
     }
 
     [Authorize]
     [HttpGet("rooms")]
+    // Get user rooms with user id from authtoken
     public IEnumerable<GetUserChatroomsResponse> GetUsersChatrooms()
     {
         //  Gets the http request headers
@@ -135,6 +138,7 @@ public class UserController : Controller
         //  Sets the variable username to the username from the token
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
 
+        //  Runs the service
         return _userService.GetUserChatrooms(int.Parse(userId));
     }
 }

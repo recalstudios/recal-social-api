@@ -12,7 +12,7 @@ public class UserService : IUserService
 {
     private static readonly Random Random = new Random();
 
-    public static string RandomString(int length)
+    private static string RandomString(int length)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         return new string(Enumerable.Repeat(chars, length)
@@ -26,6 +26,7 @@ public class UserService : IUserService
         return sOutput.ToString();
     }
 
+    // Function used to hash user information
     private static string Hash(string pass)
     {
         var passBytes = Encoding.UTF8.GetBytes(pass);
@@ -33,105 +34,130 @@ public class UserService : IUserService
         return ByteArrayToString(passHash);
     }
 
+    
     // Gets user based on username
-    public GetUserResponse GetUser(string username)
+    public User GetUser(string username)
     {
-        var user = new GetUserResponse();
+        // Creates the response
+        var user = new User();
         
+        // Select user command
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "select * from recal_social_database.users where username = @user";
         var command = new MySqlCommand(commandString, connection);
-
-
-
         command.Parameters.AddWithValue("@user", username);
 
-
-        connection.Open();
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        try
         {
-            // ID in the User table
-            user.Id = (int) reader["uid"];
-            user.Username = (string) reader["username"];
-            user.Password = (string) reader["passphrase"];
-            user.Email = (string) reader["email"];
-            user.Pfp = (string) reader["pfp"];
+            // Reads the user form db
+            connection.Open();
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                // ID in the User table
+                user.Id = (int) reader["uid"];
+                user.Username = (string) reader["username"];
+                user.Password = (string) reader["passphrase"];
+                user.Email = (string) reader["email"];
+                user.Pfp = (string) reader["pfp"];
+                user.Active = (int) reader["active"];
+            }
+            connection.Close();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
         }
 
-        connection.Close();
+        // Return the user
         return user;
     }
+    
     
     // Gets user based on userId
     public User GetUserById(int userId)
     {
+        // Creates user used in response
         var user = new User();
         
+        // Selects the user
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "select * from recal_social_database.users where uid = @userId";
         var command = new MySqlCommand(commandString, connection);
-
-
-
         command.Parameters.AddWithValue("@userId", userId);
 
-
-        connection.Open();
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        try
         {
-            // ID in the User table
-            user.Id = (int) reader["uid"];
-            user.Username = (string) reader["username"];
-            user.Password = (string) reader["passphrase"];
-            user.Email = (string) reader["email"];
-            user.Pfp = (string) reader["pfp"];
-            user.Active = (int) reader["active"];
+            // Reads the user
+            connection.Open();
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                // ID in the User table
+                user.Id = (int) reader["uid"];
+                user.Username = (string) reader["username"];
+                user.Password = (string) reader["passphrase"];
+                user.Email = (string) reader["email"];
+                user.Pfp = (string) reader["pfp"];
+                user.Active = (int) reader["active"];
+            }
+
+            connection.Close();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
         }
 
-        connection.Close();
         return user;
     }
 
+    // Gets the public part of the user from the user id
     public PublicGetUserResponse PublicGetUser(int userId)
     {
+        // Creates user variable used to return info
         var user = new PublicGetUserResponse();
         
+        // Gets the user
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "select * from recal_social_database.users where uid = @userId";
         var command = new MySqlCommand(commandString, connection);
-
-
-
         command.Parameters.AddWithValue("@userId", userId);
 
-
-        connection.Open();
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        try
         {
-            // ID in the User table
-            user.Id = (int) reader["uid"];
-            user.Username = (string) reader["username"];
-            user.Pfp = (string) reader["pfp"];
+            // Gets the user
+            connection.Open();
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                // ID in the User table
+                user.Id = (int) reader["uid"];
+                user.Username = (string) reader["username"];
+                user.Pfp = (string) reader["pfp"];
+            }
+
+            connection.Close();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
         }
 
-        connection.Close();
+        // Returns the user
         return user;
     }
 
+    // Cre
     public bool CreateUser(string username, string email, string pass)
     {
-        
+        // Insert the user record
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string usersString = "insert into recal_social_database.users (username, passphrase, email, pfp) values (@username, @pass, @email, @pfp)";
-        
         var userCommand = new MySqlCommand(usersString, connection);
-        
-
-        
-        
         userCommand.Parameters.AddWithValue("@pass", Hash(pass));
         userCommand.Parameters.AddWithValue("@username", username);
         userCommand.Parameters.AddWithValue("@email", email);
@@ -141,6 +167,7 @@ public class UserService : IUserService
 
         try
         {
+            // Does the creation
             connection.Open();
             userCommand.ExecuteNonQuery();
             connection.Close();
@@ -154,6 +181,7 @@ public class UserService : IUserService
 
     }
 
+    // Delete user with the username
     public bool DeleteUser(string username)
     {
         // Changes the user to random information. This is so that user chats still make sense, but user is anonymised
@@ -169,6 +197,7 @@ public class UserService : IUserService
 
         try
         {
+            // Updates the user
             connection.Open();
             command.ExecuteNonQuery();
             connection.Close();
@@ -179,21 +208,19 @@ public class UserService : IUserService
             Console.WriteLine(e);
             return false;
         }
-        
-        
-
     }
     
 
     public bool UpdateUser(int payloadUserId, string? payloadUsername, string? payloadEmail, string? payloadPfp)
     {
-        
+        // Get the user and fill in the gaps
         var user = GetUserById(payloadUserId);
         payloadUsername ??= user.Username;
         payloadEmail ??= user.Email;
         payloadPfp ??= user.Pfp;
 
         
+        // Updates the user
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
         const string commandString = "update recal_social_database.users set username = @username, email = @email, pfp = @pfp where uid = @userId";
         var command = new MySqlCommand(commandString, connection);
@@ -208,6 +235,7 @@ public class UserService : IUserService
 
         try
         {
+            // Runs the command
             connection.Open();
             command.ExecuteNonQuery();
             connection.Close();
@@ -218,54 +246,66 @@ public class UserService : IUserService
             Console.WriteLine(e);
             return false;
         }
-        
     }
 
+    // Get the user chatrooms
     public IEnumerable<GetUserChatroomsResponse> GetUserChatrooms(int userId)
     {
+        // Defines connection
         using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
 
+        // Creates a list for chatrooms and for users
         var chatrooms = new List<GetUserChatroomsResponse>();
         var users = new List<UserHasRoomResponse>();
 
-        
+        // Selects the user rooms
         const string selectRooms = "select cid, name,image, code, pass, lastActive from recal_social_database.chatrooms, recal_social_database.users_chatrooms where chatroom_cid = chatrooms.cid and users_uid = @id  order by lastActive DESC";
         var roomCommand = new MySqlCommand(selectRooms, connection);
         roomCommand.Parameters.AddWithValue("@id", userId);
 
+        // Gets the users from the room
         const string selectUser = "select chatroom_cid, uid, username, pfp from recal_social_database.users_chatrooms, recal_social_database.users where users_chatrooms.users_uid = uid";
         var userCommand = new MySqlCommand(selectUser, connection);
-
-        connection.Open();
-        using var userReader = userCommand.ExecuteReader();
-        while (userReader.Read())
+        try
         {
-            users.Add(new UserHasRoomResponse()
+            // Reads the users
+            connection.Open();
+            using var userReader = userCommand.ExecuteReader();
+            while (userReader.Read())
             {
-                Id = (int) userReader["uid"],
-                Username = (string) userReader["username"],
-                Pfp = (string) userReader["pfp"],
-                ChatroomId = (int) userReader["chatroom_cid"]
-            });
+                users.Add(new UserHasRoomResponse()
+                {
+                    Id = (int) userReader["uid"],
+                    Username = (string) userReader["username"],
+                    Pfp = (string) userReader["pfp"],
+                    ChatroomId = (int) userReader["chatroom_cid"]
+                });
+            }
+            connection.Close();
+        
+        
+            // Reads the chatrooms
+            connection.Open();
+            using var roomReader = roomCommand.ExecuteReader();
+            while (roomReader.Read())
+            {
+                var id = (int) roomReader["cid"];
+                chatrooms.Add(new GetUserChatroomsResponse()
+                {
+                    Id = id,
+                    Name = (string) roomReader["name"],
+                    Image = (string) roomReader["image"],
+                    Users = users.Where(p => p.ChatroomId == id),
+                });
+            }
         }
-        connection.Close();
-        
-        
-        connection.Open();
-        using var roomReader = roomCommand.ExecuteReader();
-        while (roomReader.Read())
+        catch (Exception e)
         {
-            var id = (int) roomReader["cid"];
-            chatrooms.Add(new GetUserChatroomsResponse()
-            {
-                Id = id,
-                Name = (string) roomReader["name"],
-                Image = (string) roomReader["image"],
-                Users = users.Where(p => p.ChatroomId == id),
-            });
+            Console.WriteLine(e);
+            throw;
         }
-        
 
+        // Returns the chatroom
         return chatrooms;
     }
 }
