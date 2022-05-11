@@ -151,7 +151,7 @@ public class UserService : IUserService
         return user;
     }
 
-    // Cre
+    // Create user with username, email and password
     public bool CreateUser(string username, string email, string pass)
     {
         // Insert the user record
