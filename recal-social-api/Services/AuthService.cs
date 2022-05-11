@@ -269,7 +269,7 @@ public class AuthService : IAuthService
     }
 
     // Verify if user exists in DB with username and pass
-    public User GetUserInfo(string username, string pass)
+    public User GetUserInfoWithCredentials(string username, string pass)
     {
         // Get the user based on username and pass
         var userdata = new User();
@@ -357,7 +357,7 @@ public class AuthService : IAuthService
     public string GetNewAuthToken(string username, string pass)
     {
         // Gets the user from the DB
-        var user = GetUserInfo(username, pass);
+        var user = GetUserInfoWithCredentials(username, pass);
         
         //  If returning Username and user.active successfully, create JWT. Else fails
         if (user.Username != null && user.Active == 1)
