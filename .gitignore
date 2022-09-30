@@ -528,3 +528,4 @@ recal-social-api/.idea/.idea.recal-social-api/.idea/dataSources/45853da5-bf2b-42
 recal-social-api/.idea/.idea.recal-social-api/.idea/indexLayout.xml
 recal-social-api/.idea/.idea.recal-social-api/.idea/workspace.xml
 *.xml
+/recal-social-api/.idea/.idea.recal-social-api/
