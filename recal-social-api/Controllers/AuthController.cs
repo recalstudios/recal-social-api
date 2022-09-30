@@ -250,7 +250,7 @@ public class AuthController : Controller
         var cookieRefreshToken = _authService.GetRefreshToken(token);
         
             // If its expired or revoked, doesnt work
-            if (DateTime.Parse(cookieRefreshToken.ExpiresAt) <= DateTime.UtcNow | cookieRefreshToken.ManuallyRevoked == 1){
+            if (DateTime.Parse(cookieRefreshToken.ExpiresAt!) <= DateTime.UtcNow | cookieRefreshToken.ManuallyRevoked == 1){
                 return Task.FromResult<IActionResult>(Unauthorized("Token is expired")); 
             }
 

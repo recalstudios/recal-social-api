@@ -1,4 +1,6 @@
-﻿using MySqlConnector;
+﻿using System.Net;
+using System.Text.RegularExpressions;
+using MySqlConnector;
 using recal_social_api.Interfaces;
 using recal_social_api.Models;
 using recal_social_api.Models.Responses;
@@ -26,6 +28,19 @@ public class ChatService : IChatService
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         return new string(Enumerable.Repeat(chars, length)
             .Select(s => s[Random.Next(s.Length)]).ToArray());
+    }
+    
+    // Clean input function
+    public static string StripHtml(string inputHTML)
+    {
+        // Regex pattern
+        const string HTML_MARKUP_REGEX_PATTERN = @"<[^>]+>\s+(?=<)|<[^>]+>";
+        inputHTML = WebUtility.HtmlDecode(inputHTML).Trim();
+
+        // Replace symbols matching regex with empty character
+        string noHTML = Regex.Replace(inputHTML, HTML_MARKUP_REGEX_PATTERN, string.Empty);
+
+        return noHTML;
     }
     
 // Message part of service
@@ -103,7 +118,7 @@ public class ChatService : IChatService
         const string insertMessage = "insert into recal_social_database.messages (uid, text, cid) values (@uid, @text, @cid)";
         var messageCommand = new MySqlCommand(insertMessage, connection);
         messageCommand.Parameters.AddWithValue("@uid", userId);
-        messageCommand.Parameters.AddWithValue("@text", content.Text);
+        messageCommand.Parameters.AddWithValue("@text", StripHtml(content.Text));
         messageCommand.Parameters.AddWithValue("@cid", chatId);
         
         // Insert current time into last active in the groupchat
@@ -172,7 +187,7 @@ public class ChatService : IChatService
             }
             
             // Sets attachments to null if no attachments are found
-            catch (Exception e)
+            catch (Exception)
             {
                 message.Content.Attachments = null;
             }
