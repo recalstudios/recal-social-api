@@ -31,16 +31,24 @@ public class ChatService : IChatService
     }
     
     // Clean input function
-    public static string StripHtml(string inputHTML)
+    public static string CleanInput(string inputHTML)
     {
-        // Regex pattern
-        const string HTML_MARKUP_REGEX_PATTERN = @"<[^>]+>\s+(?=<)|<[^>]+>";
-        inputHTML = WebUtility.HtmlDecode(inputHTML).Trim();
 
-        // Replace symbols matching regex with empty character
-        string noHTML = Regex.Replace(inputHTML, HTML_MARKUP_REGEX_PATTERN, string.Empty);
+        var map = new Dictionary<string, string>
+        {
+            {"<", "&lt;"},
+            {">", "&gt;"},
+            {"{","&#123"},
+            {"}","&#125"}
+        };
+        
+        
+        foreach (var item in map)
+        {
+            inputHTML = Regex.Replace(inputHTML, item.Key, item.Value);
+        }
 
-        return noHTML;
+        return inputHTML;
     }
     
 // Message part of service
@@ -118,7 +126,7 @@ public class ChatService : IChatService
         const string insertMessage = "insert into recal_social_database.messages (uid, text, cid) values (@uid, @text, @cid)";
         var messageCommand = new MySqlCommand(insertMessage, connection);
         messageCommand.Parameters.AddWithValue("@uid", userId);
-        messageCommand.Parameters.AddWithValue("@text", StripHtml(content.Text));
+        messageCommand.Parameters.AddWithValue("@text", CleanInput(content.Text));
         messageCommand.Parameters.AddWithValue("@cid", chatId);
         
         // Insert current time into last active in the groupchat
@@ -131,7 +139,7 @@ public class ChatService : IChatService
         const string readMessages = "select * from recal_social_database.messages where messages.id and uid = @uid and text = @text and cid = @cid";
         var readCommand = new MySqlCommand(readMessages, connection);
         readCommand.Parameters.AddWithValue("@uid", userId);
-        readCommand.Parameters.AddWithValue("@text", content.Text);
+        readCommand.Parameters.AddWithValue("@text", CleanInput(content.Text));
         readCommand.Parameters.AddWithValue("@cid", chatId);
         
         // Read attachments

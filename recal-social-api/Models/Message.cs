@@ -9,6 +9,6 @@ public class Message
     public int Room { get; set; }
     public int Author { get; set; }
 
-    public new MessageContent Content { get; set; } = null!;
+    public MessageContent Content { get; set; } = null!;
     public DateTime Timestamp { get; set; }
 }
