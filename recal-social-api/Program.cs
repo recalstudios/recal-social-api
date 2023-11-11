@@ -25,7 +25,7 @@ builder.Services.AddScoped<IChatService, ChatService>();
 
 builder.WebHost.UseKestrel(serverOptions =>
 {
-    serverOptions.Listen(IPAddress.Any, 5002);
+    serverOptions.Listen(IPAddress.Any, 80);
 });
 
 // Cross Origin Resource Sharing (CORS) Policy

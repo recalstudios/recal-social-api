@@ -1,0 +1,10 @@
+﻿services:
+  recal-social-api:
+    image: recal-social-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_CONNECTION_STRING: # Put your connection string here
+    ports:
+      - 80:80

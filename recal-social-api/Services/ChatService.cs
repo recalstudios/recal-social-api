@@ -64,7 +64,7 @@ public class ChatService : IChatService
         int end = start + lenght;
 
         
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
 
         
         // Selects all the messages from based on the criteria
@@ -120,7 +120,7 @@ public class ChatService : IChatService
         var attachments = new List<MessageAttachement>();
         
         // Connectionstring
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
        
         // Insert the message
         const string insertMessage = "insert into recal_social_database.messages (uid, text, cid) values (@uid, @text, @cid)";
@@ -222,7 +222,7 @@ public class ChatService : IChatService
     {
         // Sets the amount of matching messages to 0
         Int64 count = 0;
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
        
         // Deletes the messages
         const string deleteMessages = "delete from recal_social_database.messages where id = @mid and uid = @uid";
@@ -272,7 +272,7 @@ public class ChatService : IChatService
         var cid = new int();
         
         // Creates the chatroom
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "insert into recal_social_database.chatrooms (name, code, pass, lastActive) values (@name, @code, @pass, @lastActive)";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@name", name);
@@ -340,7 +340,7 @@ public class ChatService : IChatService
         var result = new Chatroom();
         
         
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         
         // Get the chatroom id
         const string selectCommandString = "select cid, name, image, code, pass, lastActive from recal_social_database.chatrooms, recal_social_database.users_chatrooms where chatrooms.cid = users_chatrooms.chatroom_cid and cid = @cid and users_uid = @uid";
@@ -395,7 +395,7 @@ public class ChatService : IChatService
 
         
         // Runs the update command
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "update recal_social_database.chatrooms set name = @name, image = @image, pass = @pass where cid = @cid";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@cid", chatroomId);
@@ -426,7 +426,7 @@ public class ChatService : IChatService
         var status = new Int64();
         
         // Creates the connection
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
 
         // Get if the user is in chatroom
         const string selectCommandString = "select count(*) from recal_social_database.users_chatrooms where users_uid = @uid and chatroom_cid = @cid";
@@ -496,7 +496,7 @@ public class ChatService : IChatService
         // Creates variable where chatroom id is stored
         var cid = new int?();
         
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         
         
         // Get the chatroom id
@@ -560,7 +560,7 @@ public class ChatService : IChatService
         var usersLeft = new Int64();
         
         // Creates the connection
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
 
         // Get if the user is in chatroom
         const string selectCommandString = "select count(*) from recal_social_database.users_chatrooms where users_uid = @uid and chatroom_cid = @cid";

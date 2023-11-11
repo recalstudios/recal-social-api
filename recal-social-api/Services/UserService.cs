@@ -42,7 +42,7 @@ public class UserService : IUserService
         var user = new User();
         
         // Select user command
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "select * from recal_social_database.users where username = @user";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@user", username);
@@ -82,7 +82,7 @@ public class UserService : IUserService
         var user = new User();
         
         // Selects the user
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "select * from recal_social_database.users where uid = @userId";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -121,7 +121,7 @@ public class UserService : IUserService
         var user = new PublicGetUserResponse();
         
         // Gets the user
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "select * from recal_social_database.users where uid = @userId";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -155,7 +155,7 @@ public class UserService : IUserService
     public bool CreateUser(string username, string email, string pass)
     {
         // Insert the user record
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string usersString = "insert into recal_social_database.users (username, passphrase, email, pfp) values (@username, @pass, @email, @pfp)";
         var userCommand = new MySqlCommand(usersString, connection);
         userCommand.Parameters.AddWithValue("@pass", Hash(pass));
@@ -185,7 +185,7 @@ public class UserService : IUserService
     public bool DeleteUser(string username)
     {
         // Changes the user to random information. This is so that user chats still make sense, but user is anonymised
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "update recal_social_database.users set username = @username, passphrase = @pass, email = @email, pfp = 'https://via.placeholder.com/100x100', access_level = '0', active = 0 where username = @oldUsername";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@oldUsername", username);
@@ -221,7 +221,7 @@ public class UserService : IUserService
 
         
         // Updates the user
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "update recal_social_database.users set username = @username, email = @email, pfp = @pfp where uid = @userId";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@userId", payloadUserId);
@@ -252,7 +252,7 @@ public class UserService : IUserService
     public IEnumerable<GetUserChatroomsResponse> GetUserChatrooms(int userId)
     {
         // Defines connection
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
 
         // Creates a list for chatrooms and for users
         var chatrooms = new List<GetUserChatroomsResponse>();

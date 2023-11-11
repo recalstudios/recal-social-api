@@ -67,7 +67,7 @@ public class AuthService : IAuthService
 
 
         // Insert into the DB
-            using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+            using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
             const string commandString = "insert into recal_social_database.refreshtoken (token, created, expiresAt, userId) value (@token, @created, @expiresat, @userid)";
             var command = new MySqlCommand(commandString, connection);
             command.Parameters.AddWithValue("@token", refToken.Token);
@@ -123,7 +123,7 @@ public class AuthService : IAuthService
         var refreshToken = new GetRefreshTokenResponse();
 
         // Get from the DB
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "select * from recal_social_database.refreshtoken where token = @token";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@token", token);
@@ -157,7 +157,7 @@ public class AuthService : IAuthService
         var errors = 0;
         
         // Update old token
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "update recal_social_database.refreshtoken set replacedById = @tokenId, revokationDate = @revdate, manuallyRevoked = 1 where refreshTokenId = @oldTokenId";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@tokenId", tokenId);
@@ -214,7 +214,7 @@ public class AuthService : IAuthService
 
 
             // Insert into the DB
-            using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+            using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
             const string commandString = "insert into recal_social_database.refreshtoken (token, created, expiresAt, userId) value (@token, @created, @expiresat, @userid)";
             var command = new MySqlCommand(commandString, connection);
             command.Parameters.AddWithValue("@token", refToken.Token);
@@ -275,7 +275,7 @@ public class AuthService : IAuthService
         var userdata = new User();
         
         // Connect to DB and get user
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "select * from recal_social_database.users where username = @user and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@user", username);
@@ -313,7 +313,7 @@ public class AuthService : IAuthService
         Int64 count = 0;
         
         // Updates password in DB
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "update recal_social_database.users set passphrase = @newPass where uid = @userid and passphrase = @pass";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@userid", userId);
@@ -423,7 +423,7 @@ public class AuthService : IAuthService
     public string LogOut(string token)
     {
         // Insert into the DB
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "update recal_social_database.refreshtoken set revokationDate = @revdate, manuallyRevoked = 1 where token = @token";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@token", token);
@@ -448,7 +448,7 @@ public class AuthService : IAuthService
     public string LogOutAll(string userId)
     {
         // Insert into the DB
-        using var connection = new MySqlConnection(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString);
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "update recal_social_database.refreshtoken set revokationDate = @revdate, manuallyRevoked = 1 where userId = @userid and expiresAt > @expiresat";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@userid", userId);
