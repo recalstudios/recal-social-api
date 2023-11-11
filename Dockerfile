@@ -4,9 +4,9 @@ EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["recal-social-api.csproj", "./"]
+COPY ["recal-social-api/recal-social-api.csproj", "./"]
 RUN dotnet restore "recal-social-api.csproj"
-COPY . .
+COPY recal-social-api/. .
 WORKDIR "/src/"
 RUN dotnet build "recal-social-api.csproj" -c Release -o /app/build
 
