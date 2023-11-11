@@ -8,7 +8,7 @@ using recal_social_api.Models.Responses;
 
 namespace recal_social_api.Controllers;
 [ApiController]
-[Route("chat")]
+[Route("v1/chat")]
 public class ChatController : Controller
 {
     private readonly IUserService _userService;

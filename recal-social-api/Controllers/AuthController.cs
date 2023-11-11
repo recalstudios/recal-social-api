@@ -9,7 +9,7 @@ using recal_social_api.Models.Responses;
 namespace recal_social_api.Controllers;
 
 [ApiController]
-[Route("auth")]
+[Route("v1/auth")]
 public class AuthController : Controller
 {
     private readonly IAuthService _authService;

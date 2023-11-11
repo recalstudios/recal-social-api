@@ -8,7 +8,7 @@ using recal_social_api.Models.Responses;
 namespace recal_social_api.Controllers;
 
 [ApiController]
-[Route("user")]
+[Route("v1/user")]
 
 public class UserController : Controller
 {
