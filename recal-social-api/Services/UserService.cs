@@ -1,22 +1,19 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
 using recal_social_api.Interfaces;
 using recal_social_api.Models;
 using recal_social_api.Models.Responses;
 namespace recal_social_api.Services;
-using ConfigurationManager = System.Configuration.ConfigurationManager;
 
 public class UserService : IUserService
 {
-    private static readonly Random Random = new Random();
+    private static readonly Random Random = new();
 
     private static string RandomString(int length)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        return new string(Enumerable.Repeat(chars, length)
-            .Select(s => s[Random.Next(s.Length)]).ToArray());
+        return new string(Enumerable.Repeat(chars, length).Select(s => s[Random.Next(s.Length)]).ToArray());
     }
     private static string ByteArrayToString(byte[] arrInput)
     {
@@ -34,13 +31,12 @@ public class UserService : IUserService
         return ByteArrayToString(passHash);
     }
 
-    
     // Gets user based on username
     public User GetUser(string username)
     {
         // Creates the response
         var user = new User();
-        
+
         // Select user command
         using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "select * from recal_social_database.users where username = @user";
@@ -73,14 +69,14 @@ public class UserService : IUserService
         // Return the user
         return user;
     }
-    
-    
+
+
     // Gets user based on userId
     public User GetUserById(int userId)
     {
         // Creates user used in response
         var user = new User();
-        
+
         // Selects the user
         using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "select * from recal_social_database.users where uid = @userId";
@@ -119,7 +115,7 @@ public class UserService : IUserService
     {
         // Creates user variable used to return info
         var user = new PublicGetUserResponse();
-        
+
         // Gets the user
         using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "select * from recal_social_database.users where uid = @userId";
@@ -162,8 +158,6 @@ public class UserService : IUserService
         userCommand.Parameters.AddWithValue("@username", username);
         userCommand.Parameters.AddWithValue("@email", email);
         userCommand.Parameters.AddWithValue("@pfp", "https://via.placeholder.com/50");
-        
-        
 
         try
         {
@@ -178,7 +172,6 @@ public class UserService : IUserService
             Console.WriteLine(e);
             return false;
         }
-
     }
 
     // Delete user with the username
@@ -192,8 +185,6 @@ public class UserService : IUserService
         command.Parameters.AddWithValue("@username", "Deleted user #" + RandomString(16));
         command.Parameters.AddWithValue("@pass", Hash(RandomString(32)));
         command.Parameters.AddWithValue("@email", RandomString(32));
-        
-
 
         try
         {
@@ -209,7 +200,6 @@ public class UserService : IUserService
             return false;
         }
     }
-    
 
     public bool UpdateUser(int payloadUserId, string? payloadUsername, string? payloadEmail, string? payloadPfp)
     {
@@ -219,7 +209,6 @@ public class UserService : IUserService
         payloadEmail ??= user.Email;
         payloadPfp ??= user.Pfp;
 
-        
         // Updates the user
         using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
         const string commandString = "update recal_social_database.users set username = @username, email = @email, pfp = @pfp where uid = @userId";
@@ -228,10 +217,6 @@ public class UserService : IUserService
         command.Parameters.AddWithValue("@username", payloadUsername);
         command.Parameters.AddWithValue("@email", payloadEmail);
         command.Parameters.AddWithValue("@pfp", payloadPfp);
-        
-
-
-
 
         try
         {
@@ -282,8 +267,7 @@ public class UserService : IUserService
                 });
             }
             connection.Close();
-        
-        
+
             // Reads the chatrooms
             connection.Open();
             using var roomReader = roomCommand.ExecuteReader();

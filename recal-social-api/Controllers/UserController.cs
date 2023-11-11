@@ -1,9 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
-using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
-using recal_social_api.Models;
 using recal_social_api.Models.Requests;
 using recal_social_api.Models.Responses;
 
@@ -31,15 +29,15 @@ public class UserController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var username = tokenS!.Claims.First(claim => claim.Type == "Username").Value;
         var retUser = _userService.GetUser(username);
@@ -47,7 +45,7 @@ public class UserController : Controller
         //  Runs the service
         return string.IsNullOrEmpty(retUser.Username) ? Task.FromResult<IActionResult>(NotFound("Username does not exist")) : Task.FromResult<IActionResult>(Ok(retUser));
     }
-    
+
     [AllowAnonymous]
     [HttpPost("create")]
     // Create a user using username, email and password
@@ -73,15 +71,15 @@ public class UserController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var username = tokenS.Claims.First(claim => claim.Type == "Username").Value;
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
@@ -89,7 +87,7 @@ public class UserController : Controller
 
         // Logs out all refreshtokens
         var logout = _authService.LogOutAll(userId);
-        
+
         // Returns true if logged out
         return logout == "Success";
     }
@@ -102,18 +100,18 @@ public class UserController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
-        
+
         // Runs the service
         return _userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Email, payload.Pfp);
     }
@@ -126,15 +124,15 @@ public class UserController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
 

@@ -1,5 +1,4 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
-using System.IO.Pipes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
@@ -11,18 +10,16 @@ namespace recal_social_api.Controllers;
 [ApiController]
 [Route("chat")]
 public class ChatController : Controller
-{ 
-    private readonly IAuthService _authService;
+{
     private readonly IUserService _userService;
     private readonly IChatService _chatService;
 
-    public ChatController(IAuthService authService, IUserService userService, IChatService chatService)
+    public ChatController(IUserService userService, IChatService chatService)
     {
-        _authService = authService;
         _userService = userService;
         _chatService = chatService;
     }
-    
+
 // Message part of chatrooms
     [Authorize]
     [HttpPost("room/backlog")]
@@ -32,18 +29,18 @@ public class ChatController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
-        
+
         // Runs the service
         return _chatService.GetChatroomMessages(payload.ChatroomId, userId, payload.Start, payload.Length);
     }
@@ -56,15 +53,15 @@ public class ChatController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
 
@@ -78,7 +75,7 @@ public class ChatController : Controller
         }
         return Unauthorized();
     }
-    
+
     [Authorize]
     [HttpPost("room/message/delete")]
     // Deletes the message with the message id
@@ -87,22 +84,22 @@ public class ChatController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
-       
+
         // Runs the service
         return _chatService.DeleteChatMessage(payload.MessageId, userId);
     }
-    
+
 // Room part of chatrooms
 
     [Authorize]
@@ -113,22 +110,22 @@ public class ChatController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
-        
+
         // Runs the service
         return _chatService.CreateChatroom(payload.Name, payload.Pass, userId);
     }
-    
+
     [Authorize]
     [HttpPost("room/details")]
     // Gives detailed information on the room with the userid and chatroom id
@@ -137,22 +134,22 @@ public class ChatController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
 
         // Runs the service
         return _chatService.DetailsChatroom(userId, payload.ChatroomId);
     }
-    
+
     [Authorize]
     [HttpPost("room/update")]
     // Updates the chatroom with name, image or pass
@@ -161,22 +158,22 @@ public class ChatController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
 
         // Runs the service
         return _chatService.UpdateChatroom(userId, payload.ChatroomId, payload.Name, payload.Image, payload.Pass);
     }
-    
+
     [Authorize]
     [HttpPost("room/delete")]
     // Delete rooms with user id and chatroom id
@@ -185,22 +182,22 @@ public class ChatController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
 
         // Runs the service
         return _chatService.DeleteChatroom(userId, payload.ChatroomId);
     }
-    
+
     [Authorize]
     [HttpPost("room/join")]
     // Lets users join chatrooms with userid, room code and room pass
@@ -209,22 +206,22 @@ public class ChatController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
 
         // Runs the service
         return _chatService.JoinChatroom(payload.Code, payload.Pass, userId);
     }
-    
+
     [Authorize]
     [HttpPost("room/leave")]
     // Lets users leave chatrooms with their authtoken and chatroom id
@@ -233,15 +230,15 @@ public class ChatController : Controller
         //  Gets the http request headers
         HttpContext httpContext = HttpContext;
         string authHeader = httpContext.Request.Headers["Authorization"];
-        
+
         //  Cuts out the Bearer part of the header
         var stream = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
-        
+
         //  Sets the variable username to the username from the token
         var userId = int.Parse(tokenS!.Claims.First(claim => claim.Type == "UserId").Value);
 
