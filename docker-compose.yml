@@ -5,6 +5,12 @@
       context: .
       dockerfile: Dockerfile
     environment:
-      DATABASE_CONNECTION_STRING: # Put your connection string here
+      DATABASE_CONNECTION_STRING: # A MySQL connection string for the database
+      MAIL_SERVER: # The mail server to use for passowrd resets
+      MAIL_SERVER_PORT: # The port to use for the mail server
+      MAIL_SENDER_NAME: # The name of the sender of system emails
+      MAIL_SENDER_EMAIL: # The email address of the sender
+      MAIL_USERNAME: # The username for the mail server
+      MAIL_PASSWORD: # The password for the mail server
     ports:
       - 80:80
