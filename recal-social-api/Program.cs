@@ -1,10 +1,5 @@
-using System.Collections.Immutable;
-using System.Configuration;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using recal_social_api.Interfaces;
@@ -22,6 +17,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IMailService, MailService>();
 
 builder.WebHost.UseKestrel(serverOptions =>
 {
@@ -31,9 +27,7 @@ builder.WebHost.UseKestrel(serverOptions =>
 // Cross Origin Resource Sharing (CORS) Policy
 builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", b =>
 {
-    b.AllowAnyOrigin()
-        .AllowAnyMethod()
-        .AllowAnyHeader();
+    b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
 }));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
