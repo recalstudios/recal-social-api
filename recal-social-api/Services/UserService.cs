@@ -8,7 +8,14 @@ namespace recal_social_api.Services;
 
 public class UserService : IUserService
 {
+    private readonly IMailService _mailService;
+
     private static readonly Random Random = new();
+
+    public UserService(IMailService mailService)
+    {
+        _mailService = mailService;
+    }
 
     private static string RandomString(int length)
     {
@@ -231,6 +238,54 @@ public class UserService : IUserService
             Console.WriteLine(e);
             return false;
         }
+    }
+
+    public bool SendPassphraseResetEmail(string emailAddress)
+    {
+        // Define connection
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
+
+        // Construct SQL command
+        const string commandString = "select username from recal_social_database.users where email = @email";
+        var command = new MySqlCommand(commandString, connection);
+        command.Parameters.AddWithValue("@email", emailAddress);
+
+        try
+        {
+            // Declare variable
+            string? username = null;
+
+            // Get users with specified email address
+            connection.Open();
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                username = (string) reader[0];
+            }
+
+            connection.Close();
+
+            // If user exists, send password reset email
+            if (username != null)
+            {
+                _mailService.SendMail(new MailData
+                {
+                    EmailBody = "This is a test email. You can not reply to this email.",
+                    EmailSubject = "Recal Social password reset",
+                    RecipientEmail = emailAddress,
+                    RecipientName = username
+                });
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+
+
+        return true;
     }
 
     // Get the user chatrooms

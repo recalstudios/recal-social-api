@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using recal_social_api.Interfaces;
-using recal_social_api.Models;
 using recal_social_api.Models.Requests;
 using recal_social_api.Models.Responses;
 
@@ -15,13 +14,11 @@ public class UserController : Controller
 {
     private readonly IUserService _userService;
     private readonly IAuthService _authService;
-    private readonly IMailService _mailService;
 
-    public UserController(IUserService userService, IAuthService authService, IMailService mailService)
+    public UserController(IUserService userService, IAuthService authService)
     {
         _userService = userService;
         _authService = authService;
-        _mailService = mailService;
     }
 
     [Authorize]
@@ -119,16 +116,10 @@ public class UserController : Controller
         return _userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Email, payload.Pfp);
     }
 
-    [HttpPost("reset-password")]
-    public bool ResetUserPassword(string recipientEmail, string recipientName)
+    [HttpPost("reset-passphrase")]
+    public bool RequestPassphraseReset([FromBody] ResetPassphraseRequest payload)
     {
-        return _mailService.SendMail(new MailData
-        {
-            EmailBody = "This is a test email. You can not reply to this email.",
-            EmailSubject = "Recal Social password reset",
-            RecipientEmail = recipientEmail,
-            RecipientName = recipientName
-        });
+        return _userService.SendPassphraseResetEmail(payload.Email);
     }
 
     [Authorize]

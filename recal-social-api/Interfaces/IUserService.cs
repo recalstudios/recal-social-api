@@ -10,6 +10,8 @@ public interface IUserService
     public PublicGetUserResponse PublicGetUser(int userId);
     public bool CreateUser(string username, string email, string pass);
     public bool DeleteUser(string username);
-    bool UpdateUser(int payloadUserId, string? payloadUsername, string? payloadEmail, string? payloadPfp);
+    // UpdateUser wasn't public before, but i think it should be?
+    public bool UpdateUser(int payloadUserId, string? payloadUsername, string? payloadEmail, string? payloadPfp);
+    public bool SendPassphraseResetEmail(string emailAddress);
     public IEnumerable<GetUserChatroomsResponse> GetUserChatrooms(int userId);
 }
