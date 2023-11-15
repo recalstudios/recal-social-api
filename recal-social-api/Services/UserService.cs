@@ -298,13 +298,52 @@ public class UserService : IUserService
             _mailService.SendMail(new MailData
             {
                 EmailBody = $@"
-                    We have received your request to reset your Recal Social passphrase. To reset your passphrase, click
-                    the following link:
+                    <link rel=""preconnect"" href=""https://fonts.googleapis.com"">
+                    <link rel=""preconnect"" href=""https://fonts.gstatic.com"" crossorigin>
+                    <link href=""https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"" rel=""stylesheet"">
 
-                    https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}
-                    
-                    This action was triggered by submitting a passphrase reset request on our website. If you didn't do
-                    this, don't worry. Your password will not be changed unless you click the link above.",
+                    <style>
+                        h1
+                        {{
+                            width: max-content;
+                            color: transparent;
+                            background: linear-gradient(to right, #40446e, #8892ec);
+
+                            background-clip: text;
+                            -webkit-background-clip: text;
+
+                            font-family: 'Poppins', sans-serif;
+                            font-size: 15vw;
+                            font-weight: 600;
+                        }}
+
+                        .btn
+                        {{
+                            display: inline-block;
+                            color: #d3d6f0;
+                            background-color: #40446e;
+                            padding: 10px 45px;
+                            margin: 2rem 0;
+                            border-radius: 15px;
+                            text-decoration: none;
+                            font-family: 'Poppins', sans-serif;
+                            font-size: 24px;
+                            font-weight: bold;
+                        }}
+                    </style>
+
+                    <h1>Recal Social</h1>
+                    <h2>Reset passphrase</h2>
+
+                    <p>We have received your request to reset your Recal Social passphrase. To reset your passphrase,
+                        click the following button:</p>
+
+                    <a class=""btn"" href=""https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}"">Reset passphrase</a>
+
+                    <p>If the button doesn't work, paste the following URL into your browser's address bar: <a href=""https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}"">https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}</a></p>
+
+                    <p>This action was triggered by submitting a passphrase reset request on our website. If you didn't
+                        do this, don't worry. Your password will not be changed unless you click the link above.</p>",
                 // TODO: Let users invalidate reset tokens if they aren't gonna use it
                 EmailSubject = "Recal Social passphrase reset",
                 RecipientEmail = emailAddress,

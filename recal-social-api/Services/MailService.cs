@@ -23,6 +23,7 @@ public class MailService : IMailService
 
             var emailBodyBuilder = new BodyBuilder
             {
+                HtmlBody = mailData.EmailBody,
                 TextBody = mailData.EmailBody
             };
             emailMessage.Body = emailBodyBuilder.ToMessageBody();
