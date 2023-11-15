@@ -17,6 +17,7 @@ public class UserService : IUserService
         _mailService = mailService;
     }
 
+    // FIXME: This is not cryptographically secure. See: https://stackoverflow.com/questions/730268/unique-random-string-generation
     private static string RandomString(int length)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -242,40 +243,30 @@ public class UserService : IUserService
 
     public bool SendPassphraseResetEmail(string emailAddress)
     {
+        // Declare variables
+        int? userId = null;
+        string? username = null;
+
         // Define connection
         using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
 
         // Construct SQL command
-        const string commandString = "select username from recal_social_database.users where email = @email";
+        const string commandString = "select uid, username from recal_social_database.users where email = @email";
         var command = new MySqlCommand(commandString, connection);
         command.Parameters.AddWithValue("@email", emailAddress);
 
         try
         {
-            // Declare variable
-            string? username = null;
-
             // Get users with specified email address
             connection.Open();
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                username = (string) reader[0];
+                userId = (int) reader["uid"];
+                username = (string) reader["username"];
             }
 
             connection.Close();
-
-            // If user exists, send password reset email
-            if (username != null)
-            {
-                _mailService.SendMail(new MailData
-                {
-                    EmailBody = "This is a test email. You can not reply to this email.",
-                    EmailSubject = "Recal Social password reset",
-                    RecipientEmail = emailAddress,
-                    RecipientName = username
-                });
-            }
         }
         catch (Exception e)
         {
@@ -283,7 +274,47 @@ public class UserService : IUserService
             throw;
         }
 
+        // If the user doesn't exist, stop the function
+        if (username == null) return true;
 
+        // If user exists, create token and send password reset email
+        // Generate token
+        var resetToken = RandomString(256);
+
+        // Save the token with the user id
+        using var saveTokenConnection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
+        const string saveTokenCommandString = "insert into recal_social_database.passphrase_reset_tokens (user_id, token) values (@userId, @resetToken)";
+        var saveTokenCommand = new MySqlCommand(saveTokenCommandString, saveTokenConnection);
+        saveTokenCommand.Parameters.AddWithValue("@userId", userId);
+        saveTokenCommand.Parameters.AddWithValue("@resetToken", resetToken);
+
+        try
+        {
+            // Run the command
+            saveTokenConnection.Open();
+            saveTokenCommand.ExecuteNonQuery();
+            saveTokenConnection.Close();
+
+            _mailService.SendMail(new MailData
+            {
+                EmailBody = $@"
+                    We have received your request to reset your Recal Social passphrase. To reset your passphrase, click
+                    the following link:
+
+                    https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}
+                    
+                    This action was triggered by submitting a passphrase reset request on our website. If you didn't do
+                    this, don't worry. Your password will not be changed unless you click the link above.",
+                // TODO: Let users invalidate reset tokens if they aren't gonna use it
+                EmailSubject = "Recal Social passphrase reset",
+                RecipientEmail = emailAddress,
+                RecipientName = username
+            });
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
 
         return true;
     }
