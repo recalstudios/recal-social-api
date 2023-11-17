@@ -13,5 +13,6 @@ public interface IUserService
     // UpdateUser wasn't public before, but i think it should be?
     public bool UpdateUser(int payloadUserId, string? payloadUsername, string? payloadEmail, string? payloadPfp);
     public bool SendPassphraseResetEmail(string emailAddress);
+    public bool ResetUserPassphraseUsingResetToken(string resetToken, string newPassphrase);
     public IEnumerable<GetUserChatroomsResponse> GetUserChatrooms(int userId);
 }

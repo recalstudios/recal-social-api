@@ -116,10 +116,16 @@ public class UserController : Controller
         return _userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Email, payload.Pfp);
     }
 
-    [HttpPost("reset-passphrase")]
-    public bool RequestPassphraseReset([FromBody] ResetPassphraseRequest payload)
+    [HttpPost("request-passphrase-reset")]
+    public bool RequestPassphraseReset([FromBody] RequestPassphraseResetRequest payload)
     {
         return _userService.SendPassphraseResetEmail(payload.Email);
+    }
+
+    [HttpPost("reset-passphrase")]
+    public bool ResetUserPassphrase([FromBody] ResetPassphraseRequest payload)
+    {
+        return _userService.ResetUserPassphraseUsingResetToken(payload.ResetToken, payload.NewPassphrase);
     }
 
     [Authorize]

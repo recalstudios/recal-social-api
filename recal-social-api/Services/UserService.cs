@@ -358,6 +358,72 @@ public class UserService : IUserService
         return true;
     }
 
+    public bool ResetUserPassphraseUsingResetToken(string resetToken, string newPassphrase)
+    {
+        // Declare userId
+        var userId = -1;
+
+        // Get user id
+        using var connection = new MySqlConnection(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING"));
+        const string selectUserCommandString = "select user_id from recal_social_database.passphrase_reset_tokens where token = @resetToken";
+        var selectUserCommand = new MySqlCommand(selectUserCommandString, connection);
+        selectUserCommand.Parameters.AddWithValue("@resetToken", resetToken);
+
+        try
+        {
+            connection.Open();
+            using var reader = selectUserCommand.ExecuteReader();
+            while (reader.Read())
+            {
+                userId = (int) reader[0];
+            }
+            connection.Close();
+
+            // If no user has been found tied to the provided resetToken, stop
+            if (userId == -1) return false;
+
+            // TODO: Check if the reset token is active
+
+            // Otherwise, continue
+            // Create new commands
+            const string updatePassphraseCommandString = "update recal_social_database.users set passphrase = @newPassphrase where uid = @userId";
+            var updatePassphraseCommand = new MySqlCommand(updatePassphraseCommandString, connection);
+            updatePassphraseCommand.Parameters.AddWithValue("@newPassphrase", Hash(newPassphrase));
+            updatePassphraseCommand.Parameters.AddWithValue("@userId", userId);
+
+            const string deactivateResetTokenCommandString = "update recal_social_database.passphrase_reset_tokens set active = false where token = @token";
+            var deactivateResetTokenCommand = new MySqlCommand(deactivateResetTokenCommandString, connection);
+            deactivateResetTokenCommand.Parameters.AddWithValue("@token", resetToken);
+
+            // Run command
+            try
+            {
+                // Update passphrase
+                connection.Open();
+                updatePassphraseCommand.ExecuteNonQuery();
+                connection.Close();
+
+                // Deactivate token
+                connection.Open();
+                deactivateResetTokenCommand.ExecuteNonQuery();
+                connection.Close();
+
+                // Passphrase has been updated
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return false;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+    }
+
     // Get the user chatrooms
     public IEnumerable<GetUserChatroomsResponse> GetUserChatrooms(int userId)
     {
@@ -383,7 +449,7 @@ public class UserService : IUserService
             using var userReader = userCommand.ExecuteReader();
             while (userReader.Read())
             {
-                users.Add(new UserHasRoomResponse()
+                users.Add(new UserHasRoomResponse
                 {
                     Id = (int) userReader["uid"],
                     Username = (string) userReader["username"],
@@ -399,7 +465,7 @@ public class UserService : IUserService
             while (roomReader.Read())
             {
                 var id = (int) roomReader["cid"];
-                chatrooms.Add(new GetUserChatroomsResponse()
+                chatrooms.Add(new GetUserChatroomsResponse
                 {
                     Id = id,
                     Name = (string) roomReader["name"],
@@ -407,6 +473,7 @@ public class UserService : IUserService
                     Users = users.Where(p => p.ChatroomId == id),
                 });
             }
+            connection.Close();
         }
         catch (Exception e)
         {

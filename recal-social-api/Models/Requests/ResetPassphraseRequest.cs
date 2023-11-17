@@ -1,6 +1,7 @@
-﻿namespace recal_social_api.Models.Requests;
+namespace recal_social_api.Models.Requests;
 
 public class ResetPassphraseRequest
 {
-    public string Email { get; set; } = null!;
+    public string ResetToken { get; set; }
+    public string NewPassphrase { get; set; }
 }
