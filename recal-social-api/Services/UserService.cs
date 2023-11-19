@@ -282,18 +282,17 @@ public class UserService : IUserService
         var resetToken = RandomString(256);
 
         // Save the token with the user id
-        using var saveTokenConnection = new MySqlConnection(GlobalVars.DatabaseConnectionString);
         const string saveTokenCommandString = "insert into recal_social_database.passphrase_reset_tokens (user_id, token) values (@userId, @resetToken)";
-        var saveTokenCommand = new MySqlCommand(saveTokenCommandString, saveTokenConnection);
+        var saveTokenCommand = new MySqlCommand(saveTokenCommandString, connection);
         saveTokenCommand.Parameters.AddWithValue("@userId", userId);
         saveTokenCommand.Parameters.AddWithValue("@resetToken", resetToken);
 
         try
         {
             // Run the command
-            saveTokenConnection.Open();
+            connection.Open();
             saveTokenCommand.ExecuteNonQuery();
-            saveTokenConnection.Close();
+            connection.Close();
 
             _mailService.SendMail(new MailData
             {
