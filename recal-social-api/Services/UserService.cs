@@ -39,6 +39,33 @@ public class UserService : IUserService
         return ByteArrayToString(passHash);
     }
 
+    // Function for invalidating a reset token after one hour
+    // From https://stackoverflow.com/questions/13740629/how-do-i-trigger-a-method-to-run-after-x-seconds
+    private static async void InvalidateResetToken(string resetToken)
+    {
+        // Wait before invalidation
+        // 1 hour = 3600 seconds
+        await Task.Delay(TimeSpan.FromSeconds(3600));
+
+        // Create sql command
+        await using var connection = new MySqlConnection(GlobalVars.DatabaseConnectionString);
+        const string commandString = "update recal_social_database.passphrase_reset_tokens set active = false where token = @token";
+        var command = new MySqlCommand(commandString, connection);
+        command.Parameters.AddWithValue("@token", resetToken);
+
+        // Run the command
+        try
+        {
+            connection.Open();
+            command.ExecuteNonQuery();
+            await connection.CloseAsync(); // idk why this is async, but rider told me to, so it's probably smart
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+
     // Gets user based on username
     public User GetUser(string username)
     {
@@ -342,14 +369,22 @@ public class UserService : IUserService
                     <p>If the button doesn't work, paste the following URL into your browser's address bar: <a href=""https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}"">https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}</a></p>
 
                     <p>This action was triggered by submitting a passphrase reset request on our website. If you didn't
-                        do this, don't worry. Your password will not be changed unless you click the link above.</p>",
-                // TODO: Let users invalidate reset tokens if they aren't gonna use it
-                // It's probably a better idea to just auto-invalidate after x amount of time, let's say 1 hour
-                // Ugh i have no idea how imma do this so its just gonna be here for now even though that's a horrible idea
+                        do this, don't worry. Your password will not be changed unless you click the link above.</p>
+
+                    <p>Only you can see this link, and it can only be used once. It will automatically be invalidated in
+                        1 hour if it hasn't been used, to protect your account.</p>
+
+                    <p><i>Please note that replied to this email address will not be handled. If you have any questions,
+                        contact <a href=""mailto:soni@recalstudios.net"">soni@recalstudios.net</a>.</i></p>
+
+                    <br>",
                 EmailSubject = "Recal Social passphrase reset",
                 RecipientEmail = emailAddress,
                 RecipientName = username
             });
+
+            // Invalidate reset token after 1 hour
+            InvalidateResetToken(resetToken);
         }
         catch (Exception e)
         {
