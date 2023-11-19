@@ -6,16 +6,9 @@ using recal_social_api.Models;
 using recal_social_api.Models.Responses;
 namespace recal_social_api.Services;
 
-public class UserService : IUserService
+public class UserService(IMailService mailService) : IUserService
 {
-    private readonly IMailService _mailService;
-
     private static readonly Random Random = new();
-
-    public UserService(IMailService mailService)
-    {
-        _mailService = mailService;
-    }
 
     // FIXME: This is not cryptographically secure. See: https://stackoverflow.com/questions/730268/unique-random-string-generation
     private static string RandomString(int length)
@@ -212,7 +205,7 @@ public class UserService : IUserService
     // Delete user with the username
     public bool DeleteUser(string username)
     {
-        // Changes the user to random information. This is so that user chats still make sense, but user is anonymised
+        // Changes the user to random information. This is so that user chats still make sense, but user is anonymized
         using var connection = new MySqlConnection(GlobalVars.DatabaseConnectionString);
         const string commandString = "update recal_social_database.users set username = @username, passphrase = @pass, email = @email, pfp = 'https://via.placeholder.com/100x100', access_level = '0', active = 0 where username = @oldUsername";
         var command = new MySqlCommand(commandString, connection);
@@ -321,63 +314,65 @@ public class UserService : IUserService
             saveTokenCommand.ExecuteNonQuery();
             connection.Close();
 
-            _mailService.SendMail(new MailData
+            mailService.SendMail(new MailData
             {
-                EmailBody = $@"
-                    <link rel=""preconnect"" href=""https://fonts.googleapis.com"">
-                    <link rel=""preconnect"" href=""https://fonts.gstatic.com"" crossorigin>
-                    <link href=""https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"" rel=""stylesheet"">
+                EmailBody = $$"""
+                              <link rel="preconnect" href="https://fonts.googleapis.com">
+                              <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                              <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-                    <style>
-                        h1
-                        {{
-                            width: max-content;
-                            color: transparent;
-                            background: linear-gradient(to right, #40446e, #8892ec);
+                              <style>
+                                  h1
+                                  {
+                                      width: max-content;
+                                      color: transparent;
+                                      background: linear-gradient(to right, #40446e, #8892ec);
 
-                            background-clip: text;
-                            -webkit-background-clip: text;
+                                      background-clip: text;
+                                      -webkit-background-clip: text;
 
-                            font-family: 'Poppins', sans-serif;
-                            font-size: 15vw;
-                            font-weight: 600;
-                        }}
+                                      font-family: 'Poppins', sans-serif;
+                                      font-size: 15vw;
+                                      font-weight: 600;
+                                  }
 
-                        .btn
-                        {{
-                            display: inline-block;
-                            color: #d3d6f0;
-                            background-color: #40446e;
-                            padding: 10px 45px;
-                            margin: 2rem 0;
-                            border-radius: 15px;
-                            text-decoration: none;
-                            font-family: 'Poppins', sans-serif;
-                            font-size: 24px;
-                            font-weight: bold;
-                        }}
-                    </style>
+                                  .btn
+                                  {
+                                      display: inline-block;
+                                      color: #d3d6f0;
+                                      background-color: #40446e;
+                                      padding: 10px 45px;
+                                      margin: 2rem 0;
+                                      border-radius: 15px;
+                                      text-decoration: none;
+                                      font-family: 'Poppins', sans-serif;
+                                      font-size: 24px;
+                                      font-weight: bold;
+                                  }
+                              </style>
 
-                    <h1>Recal Social</h1>
-                    <h2>Reset passphrase</h2>
+                              <h1>Recal Social</h1>
+                              <h2>Reset passphrase</h2>
 
-                    <p>We have received your request to reset your Recal Social passphrase. To reset your passphrase,
-                        click the following button:</p>
+                              <p>We have received your request to reset your Recal Social passphrase. To reset your
+                                  passphrase, click the following button:</p>
 
-                    <a class=""btn"" href=""https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}"">Reset passphrase</a>
+                              <a class="btn" href="https://social.recalstudios.net/reset-passphrase?resetToken={{resetToken}}">Reset passphrase</a>
 
-                    <p>If the button doesn't work, paste the following URL into your browser's address bar: <a href=""https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}"">https://social.recalstudios.net/reset-passphrase?resetToken={resetToken}</a></p>
+                              <p>If the button doesn't work, paste the following URL into your browser's address bar: <a href="https://social.recalstudios.net/reset-passphrase?resetToken={{resetToken}}">https://social.recalstudios.net/reset-passphrase?resetToken={{resetToken}}</a></p>
 
-                    <p>This action was triggered by submitting a passphrase reset request on our website. If you didn't
-                        do this, don't worry. Your password will not be changed unless you click the link above.</p>
+                              <p>This action was triggered by submitting a passphrase reset request on our website. If
+                                  you didn't do this, don't worry. Your password will not be changed unless you click
+                                  the link above.</p>
 
-                    <p>Only you can see this link, and it can only be used once. It will automatically be invalidated in
-                        1 hour if it hasn't been used, to protect your account.</p>
+                              <p>Only you can see this link, and it can only be used once. It will automatically be
+                                  invalidated in 1 hour if it hasn't been used, to protect your account.</p>
 
-                    <p><i>Please note that replied to this email address will not be handled. If you have any questions,
-                        contact <a href=""mailto:soni@recalstudios.net"">soni@recalstudios.net</a>.</i></p>
+                              <p><i>Please note that replied to this email address will not be handled. If you have any
+                                  questions, contact <a href="mailto:soni@recalstudios.net">soni@recalstudios.net</a>.</i></p>
 
-                    <br>",
+                              <br>
+                              """,
                 EmailSubject = "Recal Social passphrase reset",
                 RecipientEmail = emailAddress,
                 RecipientName = username

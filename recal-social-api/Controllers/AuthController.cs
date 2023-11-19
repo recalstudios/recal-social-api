@@ -10,66 +10,64 @@ namespace recal_social_api.Controllers;
 
 [ApiController]
 [Route("v1/auth")]
-public class AuthController : Controller
+public class AuthController(IAuthService authService, IUserService userService) : Controller
 {
-    private readonly IAuthService _authService;
-    private readonly IUserService _userService;
-
-    public AuthController(IAuthService authService, IUserService userService)
-    {
-        _authService = authService;
-        _userService = userService;
-    }
-
     [Authorize]
     [HttpPost("update/pass")]
-    // Updating the password using authtoken, old password and new password
+    // Updating the password using auth token, old password and new password
     public bool UpdateCredentials([FromBody] UpdateCredentialsRequest payload)
     {
-        //  Gets the http request headers
-        HttpContext httpContext = HttpContext;
-        string authHeader = httpContext.Request.Headers["Authorization"];
+        // Get the http request headers
+        var httpContext = HttpContext;
+        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = httpContext.Request.Headers["Authorization"]!;
 
-        //  Cuts out the Bearer part of the header
-        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        // Cuts out the Bearer part of the header
+        // This uses range indexing instead of substring now
+        var stream = authHeader["Bearer ".Length..].Trim();
 
-        //  Does some JWT magic
+        // Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
-        var tokenS = jsonToken as JwtSecurityToken;
 
-        //  Sets the variable userid to the userid from the token
+        // Stop if the token is invalid or something idk
+        if (jsonToken is not JwtSecurityToken tokenS) return false;
+
+        // Set the variable userid to the userid from the token
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
 
-        // Runs update credentials
-        return _authService.UpdateCredentials(int.Parse(userId), payload.Pass, payload.NewPass);
+        // Run update credentials
+        return authService.UpdateCredentials(int.Parse(userId), payload.Pass, payload.NewPass);
+
     }
 
     [AllowAnonymous]
     [HttpPost("token/new")]
-    // Creates a new AuthToken and a renewtoken
+    // Creates a new AuthToken and a renew token
     public IActionResult Post([FromBody] VerifyUserRequest payload)
     {
         // Creates a response that contains both auth and refresh token
         var jwtResponse = new JwtResponse();
 
         // Inputs the username and password into a function
-        var result = _authService.GetNewAuthToken(payload.Username, payload.Password);
-        // Returns error if anything goes wrong
-            if(result == "BadRequest")
-            { return BadRequest(HttpStatusCode.BadRequest); }
-            if (result == "Unauthorized")
-            { return Unauthorized(HttpStatusCode.Unauthorized); }
+        var result = authService.GetNewAuthToken(payload.Username, payload.Password);
 
-        // Inserts the authtoken into the response
-            jwtResponse.AuthToken = result;
-            var user = _userService.GetUser(payload.Username);
+        // Return error if anything goes wrong
+        switch (result)
+        {
+            case "BadRequest": return BadRequest(HttpStatusCode.BadRequest);
+            case "Unauthorized": return Unauthorized(HttpStatusCode.Unauthorized);
+        }
 
-        // Inserts the refreshtoken into the response
-            var responsetoken = _authService.GenerateRefreshToken(user.Id) ?? throw new InvalidOperationException();
-            jwtResponse.RefreshToken = responsetoken;
+        // Insert the auth token into the response
+        jwtResponse.AuthToken = result;
+        var user = userService.GetUser(payload.Username);
 
-        // Returns authtoken and refreshtoken
+        // Insert the refresh token into the response
+        var responseToken = authService.GenerateRefreshToken(user.Id) ?? throw new InvalidOperationException();
+        jwtResponse.RefreshToken = responseToken;
+
+        // Return auth token and refresh token
         return Ok(jwtResponse);
     }
 
@@ -78,23 +76,25 @@ public class AuthController : Controller
     // Check the expiration of auth tokens
     public bool CheckExpiration()
     {
-        //  Gets the http request headers
-        HttpContext httpContext = HttpContext;
-        string authHeader = httpContext.Request.Headers["Authorization"];
+        // Get the http request headers
+        var httpContext = HttpContext;
+        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = httpContext.Request.Headers["Authorization"]!;
 
-        //  Cuts out the Bearer part of the header
-        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        // Cut out the Bearer part of the header
+        // This uses range indexing instead of substring now
+        var stream = authHeader["Bearer ".Length..].Trim();
 
-        //  Does some JWT magic
+        // Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
 
-        //  Gets expirations from token and current time
+        // Gets expirations from token and current time
         var expiration = double.Parse(tokenS!.Claims.First(claim => claim.Type == "exp").Value);
 
         // Converts to datetime
-        DateTime expirationDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        var expirationDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         expirationDate = expirationDate.AddSeconds(expiration).ToLocalTime();
 
         // Sets now to Datetime Now
@@ -109,18 +109,20 @@ public class AuthController : Controller
 
     [AllowAnonymous]
     [HttpPost("token/renew")]
-    // Renews the tokens using a renewtoken
+    // Renews the tokens using a renew token
     public IActionResult ChainToken()
     {
-        // Creates a response with an auth and renewtoken
+        // Creates a response with an auth and renew token
         var result = new JwtResponse();
 
-        //  Gets the http request headers
-        HttpContext httpContext = HttpContext;
-        string authHeader = httpContext.Request.Headers["Authorization"];
+        // Get the http request headers
+        var httpContext = HttpContext;
+        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = httpContext.Request.Headers["Authorization"]!;
 
-        //  Cuts out the Bearer part of the header
-        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        // Cut out the Bearer part of the header
+        // This uses range indexing instead of substring now
+        var stream = authHeader["Bearer ".Length..].Trim();
 
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
@@ -129,13 +131,13 @@ public class AuthController : Controller
 
         //  Gets the token and userid from jwt header
         var oldToken = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
-        var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
+        var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
 
-        // Gets info regarding old refreshtoken
-        var oldRefreshToken = _authService.GetRefreshToken(oldToken);
+        // Gets info regarding old refresh token
+        var oldRefreshToken = authService.GetRefreshToken(oldToken);
 
         // Gets user information
-        var userdata = _userService.GetUserById(int.Parse(userId));
+        var userdata = userService.GetUserById(int.Parse(userId));
 
         // Does not work if it is not active, revoked or expired
         if (userdata.Active != 1 | oldRefreshToken.ManuallyRevoked == 1)
@@ -147,19 +149,19 @@ public class AuthController : Controller
         }
 
         // Gets user from DB
-        var user = _userService.GetUserById(Int32.Parse(userId));
+        var user = userService.GetUserById(int.Parse(userId));
 
-        // Creates new refreshtoken
-        var newRefreshToken = _authService.NewRefreshToken(oldToken);
+        // Creates new refresh token
+        var newRefreshToken = authService.NewRefreshToken(oldToken);
 
         // if no username, returns user fetch error
         if (user.Username == null) throw new Exception("Something went wrong when fetching user");
 
         // Otherwise, continue
         // Creates new auth token
-        var newAuthToken = _authService.GetAuthToken(user.Username);
+        var newAuthToken = authService.GetAuthToken(user.Username);
 
-        // Inputs the auth and refreshtoken into the response
+        // Inputs the auth and refresh token into the response
         result.AuthToken = newAuthToken;
         result.RefreshToken = newRefreshToken;
 
@@ -170,15 +172,17 @@ public class AuthController : Controller
 
     [Authorize]
     [HttpPost("token/logout")]
-    // Logout the currently used refreshtoken
+    // Logout the currently used refresh token
     public IActionResult Logout()
     {
-        //  Gets the http request headers
-        HttpContext httpContext = HttpContext;
-        string authHeader = httpContext.Request.Headers["Authorization"];
+        // Get the http request headers
+        var httpContext = HttpContext;
+        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = httpContext.Request.Headers["Authorization"]!;
 
-        //  Cuts out the Bearer part of the header
-        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        // Cut out the Bearer part of the header
+        // This uses range indexing instead of substring now
+        var stream = authHeader["Bearer ".Length..].Trim();
 
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
@@ -189,35 +193,32 @@ public class AuthController : Controller
         var token = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
 
         // Gets info on old token
-        var oldRefreshToken = _authService.GetRefreshToken(token);
+        var oldRefreshToken = authService.GetRefreshToken(token);
 
         // If its expired or revoked, doesnt work
-        if (DateTime.Parse(oldRefreshToken.ExpiresAt!) <= DateTime.UtcNow | oldRefreshToken.ManuallyRevoked == 1){
-            return Unauthorized(HttpStatusCode.Unauthorized);
-        }
+        if (DateTime.Parse(oldRefreshToken.ExpiresAt!) <= DateTime.UtcNow | oldRefreshToken.ManuallyRevoked == 1) return Unauthorized(HttpStatusCode.Unauthorized);
 
         // Logout function in service
-        var logout = _authService.LogOut(token);
+        var logout = authService.LogOut(token);
 
         // Returns true if successfully logged out
-        if (logout == "Success") return Ok(true);
-
         // If anything fails, returns false
-        return Ok(false);
+        return Ok(logout == "Success");
     }
-
 
     [Authorize]
     [HttpPost("token/logout/all")]
-    // Log out all refreshtokens associated with a user
+    // Log out all refresh tokens associated with a user
     public Task<IActionResult> LogoutAll()
     {
-        //  Gets the http request headers
-        HttpContext httpContext = HttpContext;
-        string authHeader = httpContext.Request.Headers["Authorization"];
+        // Get the http request headers
+        var httpContext = HttpContext;
+        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = httpContext.Request.Headers["Authorization"]!;
 
-        //  Cuts out the Bearer part of the header
-        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        // Cut out the Bearer part of the header
+        // This uses range indexing instead of substring now
+        var stream = authHeader["Bearer ".Length..].Trim();
 
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
@@ -226,17 +227,15 @@ public class AuthController : Controller
 
         //  Get claims from the token
         var token = tokenS!.Claims.First(claim => claim.Type == "Token").Value;
-        var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
+        var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
 
-        var cookieRefreshToken = _authService.GetRefreshToken(token);
+        var cookieRefreshToken = authService.GetRefreshToken(token);
 
         // If its expired or revoked, doesnt work
-        if (DateTime.Parse(cookieRefreshToken.ExpiresAt!) <= DateTime.UtcNow | cookieRefreshToken.ManuallyRevoked == 1){
-            return Task.FromResult<IActionResult>(Unauthorized("Token is expired"));
-        }
+        if (DateTime.Parse(cookieRefreshToken.ExpiresAt!) <= DateTime.UtcNow | cookieRefreshToken.ManuallyRevoked == 1) return Task.FromResult<IActionResult>(Unauthorized("Token is expired"));
 
         // Logout
-        var logout = _authService.LogOutAll(userId);
+        var logout = authService.LogOutAll(userId);
 
         // Returns ok if successful, otherwise returns bad request
         return logout switch

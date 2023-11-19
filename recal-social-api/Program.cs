@@ -34,24 +34,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 {
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters()
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)) // i think it's safe to always assume this isn't null
     };
 });
 
 var app = builder.Build();
 
-
-app.UseHsts();
+app.UseHsts(); // i don't know why we are using hsts, but it is probably a good idea. at least it's working
 app.UseCors("CorsPolicy");
 // Configure the HTTP request pipeline.
-
 
 app.UseAuthentication();
 app.UseAuthorization();

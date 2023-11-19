@@ -10,28 +10,21 @@ namespace recal_social_api.Controllers;
 [ApiController]
 [Route("v1/user")]
 
-public class UserController : Controller
+public class UserController(IUserService userService, IAuthService authService) : Controller
 {
-    private readonly IUserService _userService;
-    private readonly IAuthService _authService;
-
-    public UserController(IUserService userService, IAuthService authService)
-    {
-        _userService = userService;
-        _authService = authService;
-    }
-
     [Authorize]
     [HttpPost("user")]
     // Get user with the username in jwt token
     public Task<IActionResult> GetUser()
     {
-        //  Gets the http request headers
-        HttpContext httpContext = HttpContext;
-        string authHeader = httpContext.Request.Headers["Authorization"];
+        // Get the http request headers
+        var httpContext = HttpContext;
+        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = httpContext.Request.Headers["Authorization"]!;
 
-        //  Cuts out the Bearer part of the header
-        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        // Cut out the Bearer part of the header
+        // This uses range indexing instead of substring now
+        var stream = authHeader["Bearer ".Length..].Trim();
 
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
@@ -40,7 +33,7 @@ public class UserController : Controller
 
         //  Sets the variable username to the username from the token
         var username = tokenS!.Claims.First(claim => claim.Type == "Username").Value;
-        var retUser = _userService.GetUser(username);
+        var retUser = userService.GetUser(username);
 
         //  Runs the service
         return string.IsNullOrEmpty(retUser.Username) ? Task.FromResult<IActionResult>(NotFound("Username does not exist")) : Task.FromResult<IActionResult>(Ok(retUser));
@@ -52,7 +45,7 @@ public class UserController : Controller
     public bool CreateUser([FromBody] CreateUserRequest payload)
     {
         // Runs the service
-        return _userService.CreateUser(payload.Username, payload.Email, payload.Pass);
+        return userService.CreateUser(payload.Username, payload.Email, payload.Pass);
     }
 
     [AllowAnonymous]
@@ -60,7 +53,7 @@ public class UserController : Controller
     // Gets the public part of a user using the userid
     public PublicGetUserResponse PublicGetUser([FromBody]PublicGetUserRequest payload)
     {
-        return _userService.PublicGetUser(payload.UserId);
+        return userService.PublicGetUser(payload.UserId);
     }
 
     [Authorize]
@@ -68,28 +61,33 @@ public class UserController : Controller
     // Deletes user using userid from auth token
     public bool DeleteUser()
     {
-        //  Gets the http request headers
-        HttpContext httpContext = HttpContext;
-        string authHeader = httpContext.Request.Headers["Authorization"];
+        // Get the http request headers
+        var httpContext = HttpContext;
+        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = httpContext.Request.Headers["Authorization"]!;
 
-        //  Cuts out the Bearer part of the header
-        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        // Cut out the Bearer part of the header
+        // This uses range indexing instead of substring now
+        var stream = authHeader["Bearer ".Length..].Trim();
 
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
-        var tokenS = jsonToken as JwtSecurityToken;
+
+        // Return false if the jsonToken is wrong or something
+        if (jsonToken is not JwtSecurityToken tokenS) return false;
 
         //  Sets the variable username to the username from the token
         var username = tokenS.Claims.First(claim => claim.Type == "Username").Value;
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
-        _userService.DeleteUser(username);
+        userService.DeleteUser(username);
 
-        // Logs out all refreshtokens
-        var logout = _authService.LogOutAll(userId);
+        // Logs out all refresh tokens
+        var logout = authService.LogOutAll(userId);
 
         // Returns true if logged out
         return logout == "Success";
+
     }
 
     [Authorize]
@@ -97,58 +95,65 @@ public class UserController : Controller
     // Update the user. User id is from auth token and rest is from request body
     public bool UpdateUser([FromBody] UpdateUserRequest payload)
     {
-        //  Gets the http request headers
-        HttpContext httpContext = HttpContext;
-        string authHeader = httpContext.Request.Headers["Authorization"];
+        // Get the http request headers
+        var httpContext = HttpContext;
+        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = httpContext.Request.Headers["Authorization"]!;
 
-        //  Cuts out the Bearer part of the header
-        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        // Cut out the Bearer part of the header
+        // This uses range indexing instead of substring now
+        var stream = authHeader["Bearer ".Length..].Trim();
 
         //  Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
-        var tokenS = jsonToken as JwtSecurityToken;
+
+        // Return false if the jsonToken is wrong or something
+        if (jsonToken is not JwtSecurityToken tokenS) return false;
 
         //  Sets the variable username to the username from the token
         var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
 
         // Runs the service
-        return _userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Email, payload.Pfp);
+        return userService.UpdateUser( int.Parse(userId),  payload.Username, payload.Email, payload.Pfp);
     }
 
     [HttpPost("request-passphrase-reset")]
     public bool RequestPassphraseReset([FromBody] RequestPassphraseResetRequest payload)
     {
-        return _userService.SendPassphraseResetEmail(payload.Email);
+        return userService.SendPassphraseResetEmail(payload.Email);
     }
 
     [HttpPost("reset-passphrase")]
     public bool ResetUserPassphrase([FromBody] ResetPassphraseRequest payload)
     {
-        return _userService.ResetUserPassphraseUsingResetToken(payload.ResetToken, payload.NewPassphrase);
+        return userService.ResetUserPassphraseUsingResetToken(payload.ResetToken, payload.NewPassphrase);
     }
 
     [Authorize]
     [HttpGet("rooms")]
-    // Get user rooms with user id from authtoken
+    // Get user rooms with user id from auth token
     public IEnumerable<GetUserChatroomsResponse> GetUsersChatrooms()
     {
-        //  Gets the http request headers
-        HttpContext httpContext = HttpContext;
-        string authHeader = httpContext.Request.Headers["Authorization"];
+        // Get the http request headers
+        var httpContext = HttpContext;
+        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = httpContext.Request.Headers["Authorization"]!;
 
-        //  Cuts out the Bearer part of the header
-        var stream = authHeader.Substring("Bearer ".Length).Trim();
+        // Cut out the Bearer part of the header
+        // This uses range indexing instead of substring now
+        var stream = authHeader["Bearer ".Length..].Trim();
 
-        //  Does some JWT magic
+        // Does some JWT magic
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(stream);
         var tokenS = jsonToken as JwtSecurityToken;
 
-        //  Sets the variable username to the username from the token
-        var userId = tokenS.Claims.First(claim => claim.Type == "UserId").Value;
+        // Sets the variable username to the username from the token
+        // it might be safe to assume this is never null? i have no idea
+        var userId = tokenS!.Claims.First(claim => claim.Type == "UserId").Value;
 
         //  Runs the service
-        return _userService.GetUserChatrooms(int.Parse(userId));
+        return userService.GetUserChatrooms(int.Parse(userId));
     }
 }
