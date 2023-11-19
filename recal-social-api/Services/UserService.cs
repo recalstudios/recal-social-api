@@ -344,6 +344,8 @@ public class UserService : IUserService
                     <p>This action was triggered by submitting a passphrase reset request on our website. If you didn't
                         do this, don't worry. Your password will not be changed unless you click the link above.</p>",
                 // TODO: Let users invalidate reset tokens if they aren't gonna use it
+                // It's probably a better idea to just auto-invalidate after x amount of time, let's say 1 hour
+                // Ugh i have no idea how imma do this so its just gonna be here for now even though that's a horrible idea
                 EmailSubject = "Recal Social passphrase reset",
                 RecipientEmail = emailAddress,
                 RecipientName = username
@@ -364,7 +366,7 @@ public class UserService : IUserService
 
         // Get user id
         using var connection = new MySqlConnection(GlobalVars.DatabaseConnectionString);
-        const string selectUserCommandString = "select user_id from recal_social_database.passphrase_reset_tokens where token = @resetToken";
+        const string selectUserCommandString = "select user_id from recal_social_database.passphrase_reset_tokens where token = @resetToken and active = 1";
         var selectUserCommand = new MySqlCommand(selectUserCommandString, connection);
         selectUserCommand.Parameters.AddWithValue("@resetToken", resetToken);
 
@@ -378,10 +380,8 @@ public class UserService : IUserService
             }
             connection.Close();
 
-            // If no user has been found tied to the provided resetToken, stop
+            // If no user has been found tied to the provided resetToken, or the token is inactive, stop
             if (userId == -1) return false;
-
-            // TODO: Check if the reset token is active
 
             // Otherwise, continue
             // Create new commands
