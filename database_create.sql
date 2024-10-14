@@ -1,151 +1,95 @@
--- MySQL Workbench Forward Engineering
+-- Recal Social database creation script
+-- This script creates the schema and relevant tables for the Recal Social database structure.
 
-SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
-SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
-SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+-- Create and use schema
+create schema if not exists recal_social_database;
+use recal_social_database;
 
--- -----------------------------------------------------
--- Schema mydb
--- -----------------------------------------------------
--- -----------------------------------------------------
--- Schema recal_social_database
--- -----------------------------------------------------
+-- Chatrooms table
+create table if not exists chatrooms
+(
+    cid        int auto_increment
+        primary key,
+    name       varchar(128)                                             not null,
+    image      varchar(512) default 'https://via.placeholder.com/50x50' null,
+    code       varchar(8)                                               null,
+    pass       varchar(128)                                             null,
+    lastActive datetime     default current_timestamp()                 null,
+    constraint chatrooms_pk_2
+        unique (code)
+);
 
--- -----------------------------------------------------
--- Schema recal_social_database
--- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `recal_social_database` DEFAULT CHARACTER SET utf8 ;
-USE `recal_social_database` ;
+-- Users table
+create table if not exists users
+(
+    uid          int auto_increment
+        primary key,
+    username     varchar(32)                                                 not null,
+    passphrase   varchar(128)                                                not null,
+    email        varchar(100)                                                not null,
+    pfp          varchar(2046) default 'https://via.placeholder.com/100x100' not null,
+    access_level int(1)        default 0                                     not null,
+    active       int(1)        default 1                                     null,
+    constraint users_pk_2
+        unique (username),
+    constraint users_pk_3
+        unique (email)
+);
 
--- -----------------------------------------------------
--- Table `recal_social_database`.`chatrooms`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `recal_social_database`.`chatrooms` (
-  `cid` INT(11) NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(128) NOT NULL,
-  `image` VARCHAR(512) NULL DEFAULT 'https://via.placeholder.com/50x50',
-  `code` VARCHAR(8) NULL DEFAULT NULL,
-  `pass` VARCHAR(128) NULL DEFAULT NULL,
-  `lastActive` DATETIME NULL DEFAULT CURRENT_TIMESTAMP(),
-  PRIMARY KEY (`cid`),
-  UNIQUE INDEX `chatrooms_code_uindex` (`code` ASC) VISIBLE)
-ENGINE = InnoDB
-AUTO_INCREMENT = 177
-DEFAULT CHARACTER SET = utf8;
+-- Users has chatrooms (many-to-many relational table)
+create table if not exists users_chatrooms
+(
+    users_uid    int not null,
+    chatroom_cid int not null,
+    constraint users_chatrooms_pk
+        primary key (users_uid, chatroom_cid),
+    constraint users_chatrooms_chatrooms_cid_fk
+        foreign key (chatroom_cid) references chatrooms (cid),
+    constraint users_chatrooms_users_uid_fk
+        foreign key (users_uid) references users (uid)
+);
 
+-- Refresh token table
+create table if not exists refreshtoken
+(
+    refreshTokenId  int auto_increment
+        primary key,
+    token           varchar(1024) null,
+    created         datetime      null,
+    revokationDate  datetime      null,
+    manuallyRevoked int           null,
+    expiresAt       datetime      null,
+    replacesId      int           null,
+    replacedById    int           null,
+    userId          int           not null,
+    constraint refreshtoken_users_uid_fk
+        foreign key (userId) references users (uid)
+);
 
--- -----------------------------------------------------
--- Table `recal_social_database`.`users`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `recal_social_database`.`users` (
-  `uid` INT(11) NOT NULL AUTO_INCREMENT,
-  `username` VARCHAR(32) NOT NULL,
-  `passphrase` VARCHAR(128) NOT NULL,
-  `email` VARCHAR(100) NOT NULL,
-  `pfp` VARCHAR(2046) NOT NULL DEFAULT 'https://via.placeholder.com/100x100',
-  `access_level` INT(1) NOT NULL DEFAULT 0,
-  `active` INT(1) NULL DEFAULT 1,
-  PRIMARY KEY (`uid`),
-  UNIQUE INDEX `username_UNIQUE` (`username` ASC) VISIBLE,
-  UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE)
-ENGINE = InnoDB
-AUTO_INCREMENT = 62
-DEFAULT CHARACTER SET = utf8;
+-- Messages table
+create table if not exists messages
+(
+    id        int auto_increment
+        primary key,
+    uid       int                                  not null,
+    text      varchar(2500)                        null,
+    timestamp datetime default current_timestamp() null,
+    cid       int                                  not null,
+    constraint messages_chatrooms_cid_fk
+        foreign key (cid) references chatrooms (cid),
+    constraint messages_users_uid_fk
+        foreign key (uid) references users (uid)
+);
 
+-- Attachments table
+create table if not exists attachments
+(
+    attachment_id int auto_increment
+        primary key,
+    message_id    int          not null,
+    src           varchar(256) not null,
+    type          varchar(32)  not null,
+    constraint attachments_messages_id_fk
+        foreign key (message_id) references messages (id)
+);
 
--- -----------------------------------------------------
--- Table `recal_social_database`.`messages`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `recal_social_database`.`messages` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `uid` INT(11) NOT NULL,
-  `text` VARCHAR(2500) NULL DEFAULT NULL,
-  `timestamp` DATETIME NULL DEFAULT CURRENT_TIMESTAMP(),
-  `cid` INT(11) NOT NULL,
-  PRIMARY KEY (`id`, `uid`, `cid`),
-  INDEX `fk_messages_users1_idx` (`uid` ASC) VISIBLE,
-  INDEX `fk_messages_chatroom1_idx` (`cid` ASC) VISIBLE,
-  CONSTRAINT `fk_messages_chatroom1`
-    FOREIGN KEY (`cid`)
-    REFERENCES `recal_social_database`.`chatrooms` (`cid`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_messages_users1`
-    FOREIGN KEY (`uid`)
-    REFERENCES `recal_social_database`.`users` (`uid`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-AUTO_INCREMENT = 1859
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `recal_social_database`.`attachments`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `recal_social_database`.`attachments` (
-  `attachment_id` INT(11) NOT NULL AUTO_INCREMENT,
-  `message_id` INT(11) NULL DEFAULT NULL,
-  `src` VARCHAR(256) NOT NULL,
-  `type` VARCHAR(32) NOT NULL,
-  PRIMARY KEY (`attachment_id`),
-  INDEX `message_id_link` (`message_id` ASC) VISIBLE,
-  CONSTRAINT `message_id_link`
-    FOREIGN KEY (`message_id`)
-    REFERENCES `recal_social_database`.`messages` (`id`))
-ENGINE = InnoDB
-AUTO_INCREMENT = 2
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `recal_social_database`.`refreshtoken`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `recal_social_database`.`refreshtoken` (
-  `refreshTokenId` INT(11) NOT NULL AUTO_INCREMENT,
-  `token` VARCHAR(1024) NULL DEFAULT NULL,
-  `created` DATETIME NULL DEFAULT NULL,
-  `revokationDate` DATETIME NULL DEFAULT NULL,
-  `manuallyRevoked` INT(11) NULL DEFAULT NULL,
-  `expiresAt` DATETIME NULL DEFAULT NULL,
-  `replacesId` INT(11) NULL DEFAULT NULL,
-  `replacedById` INT(11) NULL DEFAULT NULL,
-  `userId` INT(11) NOT NULL,
-  PRIMARY KEY (`refreshTokenId`, `userId`),
-  INDEX `fk_refreshtoken_users1_idx` (`userId` ASC) VISIBLE,
-  CONSTRAINT `fk_refreshtoken_users1`
-    FOREIGN KEY (`userId`)
-    REFERENCES `recal_social_database`.`users` (`uid`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-AUTO_INCREMENT = 547
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `recal_social_database`.`users_chatrooms`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `recal_social_database`.`users_chatrooms` (
-  `users_uid` INT(11) NOT NULL,
-  `chatroom_cid` INT(11) NOT NULL,
-  PRIMARY KEY (`users_uid`, `chatroom_cid`),
-  INDEX `fk_users_has_chatroom_chatroom1_idx` (`chatroom_cid` ASC) VISIBLE,
-  INDEX `fk_users_has_chatroom_users1_idx` (`users_uid` ASC) VISIBLE,
-  CONSTRAINT `fk_users_has_chatroom_chatroom1`
-    FOREIGN KEY (`chatroom_cid`)
-    REFERENCES `recal_social_database`.`chatrooms` (`cid`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_users_has_chatroom_users1`
-    FOREIGN KEY (`users_uid`)
-    REFERENCES `recal_social_database`.`users` (`uid`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-SET SQL_MODE=@OLD_SQL_MODE;
-SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
