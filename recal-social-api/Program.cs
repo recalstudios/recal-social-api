@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using recal_social_api;
 using recal_social_api.Interfaces;
 using recal_social_api.Services;
 
@@ -21,7 +22,7 @@ builder.Services.AddScoped<IMailService, MailService>();
 
 builder.WebHost.UseKestrel(serverOptions =>
 {
-    serverOptions.Listen(IPAddress.Any, 80);
+    serverOptions.Listen(IPAddress.Any, GlobalVars.ApiPort);
 });
 
 // Cross Origin Resource Sharing (CORS) Policy

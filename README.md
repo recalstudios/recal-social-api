@@ -32,6 +32,9 @@ this is the easiest method to setup and maintain.
 Whatever method you decide to use, you must provide the task with the following environment variables:
 
 ```yml
+# Optional
+#RECAL_SOCIAL_API_PORT: # The port to host the API on. Defaults to 80 if unset
+
 DATABASE_CONNECTION_STRING: # A MySQL connection string for the database
 
 MAIL_SERVER: # The mail server to use for passowrd resets

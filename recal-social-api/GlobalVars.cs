@@ -5,6 +5,9 @@ public static class GlobalVars
     public const int RefreshTokenAgeDays = 5;
     public const int AuthTokenAgeMinutes = 7200; // AuthService line 344
 
+    // API network settings
+    public static readonly int ApiPort = Convert.ToInt32(Environment.GetEnvironmentVariable("RECAL_SOCIAL_API_PORT") ?? "80");
+    
     // Database settings
     public static readonly string DatabaseConnectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING") ?? throw new ArgumentNullException();
 
