@@ -32,14 +32,15 @@ this is the easiest method to setup and maintain.
 Whatever method you decide to use, you must provide the task with the following environment variables:
 
 ```yml
-# Optional
-#RECAL_SOCIAL_API_PORT: # The port to host the API on. Defaults to 80 if unset
-
+# Common options
+#RECAL_SOCIAL_API_PORT: # The port to host the API on. Optional, defaults to 80
 DATABASE_CONNECTION_STRING: # A MySQL connection string for the database
+ENABLE_MAIL_SERVICE: # Whether to enable the features of the API that integrate with a mail server
 
-MAIL_SERVER: # The mail server to use for passowrd resets
-MAIL_SERVER_PORT: # The port to use for the mail server
-MAIL_SENDER_NAME: # The name of the sender of system emails
+# If ENABLE_MAIL_SERVICE is set to false, none of the following variables are to be provided
+MAIL_SERVER: # The mail server to use for passphrase resets
+#MAIL_SERVER_PORT: # The port to use for the mail server. Optional, defaults to 587
+#MAIL_SENDER_NAME: # The name of the sender of system emails. Optional, defaults to "Recal Social"
 MAIL_SENDER_EMAIL: # The email address of the sender
 MAIL_USERNAME: # The username for the mail server
 MAIL_PASSWORD: # The password for the mail server

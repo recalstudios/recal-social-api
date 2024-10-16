@@ -9,6 +9,13 @@ public class MailService : IMailService
 {
     public bool SendMail(MailData mailData)
     {
+        // Don't try to send mail if the service is disabled
+        if (!GlobalVars.EnableMailService)
+        {
+            Console.WriteLine("Got SendMail request while mail Service is disabled, ignoring.");
+            return false;
+        }
+
         try
         {
             // Create email message
