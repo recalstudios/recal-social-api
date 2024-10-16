@@ -17,10 +17,8 @@ public class UserController(IUserService userService, IAuthService authService) 
     // Get user with the username in jwt token
     public Task<IActionResult> GetUser()
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -61,10 +59,8 @@ public class UserController(IUserService userService, IAuthService authService) 
     // Deletes user using userid from auth token
     public bool DeleteUser()
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -95,10 +91,8 @@ public class UserController(IUserService userService, IAuthService authService) 
     // Update the user. User id is from auth token and rest is from request body
     public bool UpdateUser([FromBody] UpdateUserRequest payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -135,10 +129,8 @@ public class UserController(IUserService userService, IAuthService authService) 
     // Get user rooms with user id from auth token
     public IEnumerable<GetUserChatroomsResponse> GetUsersChatrooms()
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now

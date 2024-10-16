@@ -17,10 +17,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Gets the backlog from a room with the chatroom id, start and length
     public GetChatroomMessagesResponse GetChatLog([FromBody] GetChatroomMessagesRequests payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -43,10 +41,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Save a message with the room id and with content
     public IActionResult SaveMessage([FromBody] SaveMessageRequest payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -76,10 +72,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Deletes the message with the message id
     public bool DeleteMessage([FromBody] DeleteMessageRequest payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -104,10 +98,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Creates the chatroom with a name and a pass
     public bool CreateChatroom([FromBody] CreateChatroomRequest payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -130,10 +122,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Gives detailed information on the room with the userid and chatroom id
     public Chatroom DetailsChatroom([FromBody] DetailsChatroomRequest payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -156,10 +146,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Updates the chatroom with name, image or pass
     public bool UpdateChatroom([FromBody] UpdateChatroomRequest payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -182,10 +170,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Delete rooms with user id and chatroom id
     public bool DeleteChatroom([FromBody] DeleteChatroomRequest payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -208,10 +194,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Lets users join chatrooms with userid, room code and room pass
     public bool JoinChatroom([FromBody] JoinChatroomRequest payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
@@ -234,10 +218,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Lets users leave chatrooms with their auth token and chatroom id
     public bool LeaveChatroom([FromBody] LeaveChatroomRequest payload)
     {
-        // Get the http request headers
-        var httpContext = HttpContext;
-        // i think it is safe to assume that this is never null, because asp.net probably handles the authorization part?
-        string authHeader = httpContext.Request.Headers["Authorization"]!;
+        // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
+        string authHeader = HttpContext.Request.Headers.Authorization!;
 
         // Cut out the Bearer part of the header
         // This uses range indexing instead of substring now
