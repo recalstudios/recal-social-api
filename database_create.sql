@@ -93,3 +93,14 @@ create table if not exists attachments
         foreign key (message_id) references messages (id)
 );
 
+-- Passphrase reset token table
+create table if not exists passphrase_reset_tokens
+(
+    id      int auto_increment
+        primary key,
+    user_id int                  not null,
+    token   varchar(256)         not null,
+    active  tinyint(1) default 1 not null,
+    constraint passphrase_reset_tokens_users_uid_fk
+        foreign key (user_id) references users (uid)
+);
