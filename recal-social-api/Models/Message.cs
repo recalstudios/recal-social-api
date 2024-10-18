@@ -1,6 +1,4 @@
-﻿using recal_social_api.Models.Responses;
-
-namespace recal_social_api.Models;
+﻿namespace recal_social_api.Models;
 
 public class Message
 {

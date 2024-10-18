@@ -4,7 +4,7 @@ public class PublicGetUserResponse
 {
     public int Id { get; set;}
     
-    public string? Username { get; set;} = null!;
+    public string? Username { get; set;}
     
-    public string? Pfp { get; set;} = null!;
+    public string? Pfp { get; set;}
 }

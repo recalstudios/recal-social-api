@@ -339,7 +339,7 @@ public class AuthService(IConfiguration config, IUserService userService) : IAut
         var claims = new[] {
             new Claim(JwtRegisteredClaimNames.Sub, config["Jwt:Subject"]!), // this should never be null i think
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.CurrentCulture)),
+            new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToBinary().ToString()),
             new Claim("UserId", user.Id.ToString()),
             new Claim("Username", user.Username!),
         };
