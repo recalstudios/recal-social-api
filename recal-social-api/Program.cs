@@ -8,6 +8,10 @@ using recal_social_api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Setup logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
 // Add services to the container.
 
 builder.Services.AddControllers();

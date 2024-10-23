@@ -10,13 +10,17 @@ namespace recal_social_api.Controllers;
 
 [ApiController]
 [Route("v1/auth")]
-public class AuthController(IAuthService authService, IUserService userService) : Controller
+public class AuthController(IAuthService authService, IUserService userService, ILogger<AuthController> logger) : Controller
 {
+    private readonly ILogger _logger = logger;
+
     [Authorize]
     [HttpPost("update/pass")]
     // Updating the password using auth token, old password and new password
     public bool UpdateCredentials([FromBody] UpdateCredentialsRequest payload)
     {
+        _logger.LogInformation("Got 'update/pass' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -44,6 +48,8 @@ public class AuthController(IAuthService authService, IUserService userService) 
     // Creates a new AuthToken and a renew token
     public IActionResult Post([FromBody] VerifyUserRequest payload)
     {
+        _logger.LogInformation("Got 'token/new' request");
+
         // Creates a response that contains both auth and refresh token
         var jwtResponse = new JwtResponse();
 
@@ -74,6 +80,8 @@ public class AuthController(IAuthService authService, IUserService userService) 
     // Check the expiration of auth tokens
     public bool CheckExpiration()
     {
+        _logger.LogInformation("Got 'token/test' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -108,6 +116,8 @@ public class AuthController(IAuthService authService, IUserService userService) 
     // Renews the tokens using a renew token
     public IActionResult ChainToken()
     {
+        _logger.LogInformation("Got 'token/renew' request");
+
         // Creates a response with an auth and renew token
         var result = new JwtResponse();
 
@@ -169,6 +179,8 @@ public class AuthController(IAuthService authService, IUserService userService) 
     // Logout the currently used refresh token
     public IActionResult Logout()
     {
+        _logger.LogInformation("Got 'token/logout' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -203,6 +215,8 @@ public class AuthController(IAuthService authService, IUserService userService) 
     // Log out all refresh tokens associated with a user
     public Task<IActionResult> LogoutAll()
     {
+        _logger.LogInformation("Got 'token/logout/all' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 

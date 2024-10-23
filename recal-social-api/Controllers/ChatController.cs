@@ -9,14 +9,18 @@ using recal_social_api.Models.Responses;
 namespace recal_social_api.Controllers;
 [ApiController]
 [Route("v1/chat/room")] // this should probably be changed at some point, given that it has two static levels of routing after v1/
-public class ChatController(IUserService userService, IChatService chatService) : Controller
+public class ChatController(IUserService userService, IChatService chatService, ILogger<ChatController> logger) : Controller
 {
+    private readonly ILogger _logger = logger;
+
     // Message part of chatrooms
     [Authorize]
     [HttpPost("backlog")]
     // Gets the backlog from a room with the chatroom id, start and length
     public GetChatroomMessagesResponse GetChatLog([FromBody] GetChatroomMessagesRequests payload)
     {
+        _logger.LogInformation("Got 'backlog' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -41,6 +45,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Save a message with the room id and with content
     public IActionResult SaveMessage([FromBody] SaveMessageRequest payload)
     {
+        _logger.LogInformation("Got 'message/save' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -72,6 +78,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Deletes the message with the message id
     public bool DeleteMessage([FromBody] DeleteMessageRequest payload)
     {
+        _logger.LogInformation("Got 'message/delete' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -98,6 +106,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Creates the chatroom with a name and a pass
     public bool CreateChatroom([FromBody] CreateChatroomRequest payload)
     {
+        _logger.LogInformation("Got 'create' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -122,6 +132,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Gives detailed information on the room with the userid and chatroom id
     public Chatroom DetailsChatroom([FromBody] DetailsChatroomRequest payload)
     {
+        _logger.LogInformation("Got 'details' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -146,6 +158,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Updates the chatroom with name, image or pass
     public bool UpdateChatroom([FromBody] UpdateChatroomRequest payload)
     {
+        _logger.LogInformation("Got 'update' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -170,6 +184,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Delete rooms with user id and chatroom id
     public bool DeleteChatroom([FromBody] DeleteChatroomRequest payload)
     {
+        _logger.LogInformation("Got 'delete' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -194,6 +210,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Lets users join chatrooms with userid, room code and room pass
     public bool JoinChatroom([FromBody] JoinChatroomRequest payload)
     {
+        _logger.LogInformation("Got 'join' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -218,6 +236,8 @@ public class ChatController(IUserService userService, IChatService chatService) 
     // Lets users leave chatrooms with their auth token and chatroom id
     public bool LeaveChatroom([FromBody] LeaveChatroomRequest payload)
     {
+        _logger.LogInformation("Got 'leave' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 

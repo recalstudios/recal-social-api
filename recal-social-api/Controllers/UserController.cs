@@ -10,13 +10,17 @@ namespace recal_social_api.Controllers;
 [ApiController]
 [Route("v1/user")]
 
-public class UserController(IUserService userService, IAuthService authService) : Controller
+public class UserController(IUserService userService, IAuthService authService, ILogger<UserController> logger) : Controller
 {
+    private readonly ILogger _logger = logger;
+
     [Authorize]
     [HttpPost("user")]
     // Get user with the username in jwt token
     public Task<IActionResult> GetUser()
     {
+        _logger.LogInformation("Got 'user' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -42,6 +46,8 @@ public class UserController(IUserService userService, IAuthService authService) 
     // Create a user using username, email and password
     public bool CreateUser([FromBody] CreateUserRequest payload)
     {
+        _logger.LogInformation("Got 'create' request");
+
         // Runs the service
         return userService.CreateUser(payload.Username, payload.Email, payload.Pass);
     }
@@ -51,6 +57,8 @@ public class UserController(IUserService userService, IAuthService authService) 
     // Gets the public part of a user using the userid
     public PublicGetUserResponse PublicGetUser([FromBody]PublicGetUserRequest payload)
     {
+        _logger.LogInformation("Got 'user/public' request");
+
         return userService.PublicGetUser(payload.UserId);
     }
 
@@ -59,6 +67,8 @@ public class UserController(IUserService userService, IAuthService authService) 
     // Deletes user using userid from auth token
     public bool DeleteUser()
     {
+        _logger.LogInformation("Got 'delete' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -91,6 +101,8 @@ public class UserController(IUserService userService, IAuthService authService) 
     // Update the user. User id is from auth token and rest is from request body
     public bool UpdateUser([FromBody] UpdateUserRequest payload)
     {
+        _logger.LogInformation("Got 'update' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
@@ -115,12 +127,16 @@ public class UserController(IUserService userService, IAuthService authService) 
     [HttpPost("request-passphrase-reset")]
     public bool RequestPassphraseReset([FromBody] RequestPassphraseResetRequest payload)
     {
+        _logger.LogInformation("Got 'request-passphrase-reset' request");
+
         return userService.SendPassphraseResetEmail(payload.Email);
     }
 
     [HttpPost("reset-passphrase")]
     public bool ResetUserPassphrase([FromBody] ResetPassphraseRequest payload)
     {
+        _logger.LogInformation("Got 'reset-passphrase' request");
+
         return userService.ResetUserPassphraseUsingResetToken(payload.ResetToken, payload.NewPassphrase);
     }
 
@@ -129,6 +145,8 @@ public class UserController(IUserService userService, IAuthService authService) 
     // Get user rooms with user id from auth token
     public IEnumerable<GetUserChatroomsResponse> GetUsersChatrooms()
     {
+        _logger.LogInformation("Got 'rooms' request");
+
         // It should be safe to assume that this is never null, because asp.net probably handles the authorization part?
         string authHeader = HttpContext.Request.Headers.Authorization!;
 
